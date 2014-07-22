@@ -2502,8 +2502,8 @@ or1k*-*-*)
 		extra_options="${extra_options} or1k/elf.opt"
 		;;
 	or1k*-*-rtems*)
-		tm_file="${tm_file} newlib-stdint.h rtems.h"
-		tmake_file="${tmake_file} t-rtems"
+		tm_file="${tm_file} newlib-stdint.h or1k/rtems.h rtems.h"
+		tmake_file="${tmake_file} or1k/t-rtems"
 		;;
 	esac
 	;;
