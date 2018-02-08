@@ -6560,12 +6560,26 @@ build_x_conditional_expr (location_t loc, tree ifexp, tree op1, tree op2,
   expr = build_conditional_expr (loc, ifexp, op1, op2, complain);
   if (processing_template_decl && expr != error_mark_node)
     {
+      bool rval = !glvalue_p (expr);
       tree min = build_min_non_dep (COND_EXPR, expr,
 				    orig_ifexp, orig_op1, orig_op2);
+      bool mrval = !glvalue_p (min);
       /* Remember that the result is an lvalue or xvalue.  */
-      if (glvalue_p (expr) && !glvalue_p (min))
+      if (!rval && mrval)
 	TREE_TYPE (min) = cp_build_reference_type (TREE_TYPE (min),
 						   !lvalue_p (expr));
+      else if (rval && !mrval)
+	{
+	  /* If it was supposed to be an rvalue but it's not, adjust
+	     one of the operands so that any overload resolution
+	     taking this COND_EXPR as an operand makes the correct
+	     decisions.  See c++/84231.  */
+	  TREE_OPERAND (min, 2) = build1_loc (loc, NON_LVALUE_EXPR,
+					      TREE_TYPE (min),
+					      TREE_OPERAND (min, 2));
+	  EXPR_LOCATION_WRAPPER_P (TREE_OPERAND (min, 2)) = 1;
+	  gcc_checking_assert (!glvalue_p (min));
+	}
       expr = convert_from_reference (min);
     }
   return expr;
