@@ -508,7 +508,11 @@ attempt_change (rtx new_addr, rtx inc_reg)
 	 before the memory reference.  */
       gcc_assert (mov_insn);
       emit_insn_before (mov_insn, inc_insn.insn);
-      move_dead_notes (mov_insn, inc_insn.insn, inc_insn.reg0);
+      regno = REGNO (inc_insn.reg0);
+      if (reg_next_use[regno] == mem_insn.insn)
+	move_dead_notes (mov_insn, mem_insn.insn, inc_insn.reg0);
+      else
+	move_dead_notes (mov_insn, inc_insn.insn, inc_insn.reg0);
 
       regno = REGNO (inc_insn.reg_res);
       reg_next_def[regno] = mov_insn;
@@ -842,12 +846,23 @@ find_address (rtx *address_of_x)
 
   if (code == MEM && rtx_equal_p (XEXP (x, 0), inc_insn.reg_res))
     {
-      /* Match with *reg0.  */
+      /* Match with *reg_res.  */
       mem_insn.mem_loc = address_of_x;
       mem_insn.reg0 = inc_insn.reg_res;
       mem_insn.reg1_is_const = true;
       mem_insn.reg1_val = 0;
       mem_insn.reg1 = GEN_INT (0);
+      return -1;
+    }
+  if (code == MEM && inc_insn.reg1_is_const && inc_insn.reg0
+      && rtx_equal_p (XEXP (x, 0), inc_insn.reg0))
+    {
+      /* Match with *reg0 AKA *(reg_res - reg1_val).  */
+      mem_insn.mem_loc = address_of_x;
+      mem_insn.reg0 = inc_insn.reg_res;
+      mem_insn.reg1_is_const = true;
+      mem_insn.reg1_val = -inc_insn.reg1_val;
+      mem_insn.reg1 = GEN_INT (mem_insn.reg1_val);
       return -1;
     }
   if (code == MEM && GET_CODE (XEXP (x, 0)) == PLUS
@@ -1368,6 +1383,33 @@ merge_in_block (int max_reg, basic_block bb)
 			{
 			  success_in_block++;
 			  insn_is_add_or_inc = false;
+			}
+		    }
+
+		  if (ok && insn_is_add_or_inc
+		      && inc_insn.reg0 != inc_insn.reg_res)
+		    {
+		      regno = REGNO (inc_insn.reg0);
+		      int luid = DF_INSN_LUID (mem_insn.insn);
+		      mem_insn.insn = get_next_ref (regno, bb, reg_next_use);
+
+		      /* Try a mem use of reg0 before that of reg_res
+			 too.  If there's no further use of reg_res,
+			 there's no point in trying an auto-inc, and
+			 if the use of reg0 is after that of reg_res,
+			 it will be too late for the auto-inc to
+			 compute reg_res's correct value.  */
+		      if (mem_insn.insn
+			  && luid > DF_INSN_LUID (mem_insn.insn)
+			  && find_address (&PATTERN (mem_insn.insn)) == -1)
+			{
+			  if (dump_file)
+			    dump_mem_insn (dump_file);
+			  if (try_merge ())
+			    {
+			      success_in_block++;
+			      insn_is_add_or_inc = false;
+			    }
 			}
 		    }
 		}
