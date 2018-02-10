@@ -549,7 +549,7 @@ test_conversion_to_ssa ()
 
   verify_three_block_gimple_cfg (fun);
 
-  /* For out trivial test function we should now have something like
+  /* For our trivial test function we should now have something like
      this:
        test_fn ()
        {
