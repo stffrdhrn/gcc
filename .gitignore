@@ -55,3 +55,6 @@ REVISION
 /mpc*
 /gmp*
 /isl*
+
+tags
+cscope.out
