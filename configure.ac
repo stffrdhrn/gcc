@@ -1174,6 +1174,10 @@ case "${target}" in
          noconfigdirs="$noconfigdirs target-libgloss" ;;
     esac
     ;;
+  smh-*-*)
+    noconfigdirs="$noconfigdirs gdb"
+    noconfigdirs="$noconfigdirs gprof"
+    ;;
   sparc-*-sunos4*)
     if test x${is_cross_compiler} = xno ; then
            use_gnu_ld=no
