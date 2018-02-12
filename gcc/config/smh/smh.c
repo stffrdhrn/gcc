@@ -26,6 +26,140 @@
 /* This file should be included last.  */
 #include "target-def.h"
 
+#define LOSE_AND_RETURN(msgid, x) \
+  do					\
+    {					\
+      smh_operand_lossage (msgid, x);	\
+      return;				\
+    } while (0)
+
+static void
+smh_operand_lossage (const char *msg, rtx op)
+{
+  debug_rtx (op);
+  output_operand_lossage ("%s", msg);
+}
+
+/* The TARGET_PRINT_OPERAND worker.  */
+void
+smh_print_operand (FILE *file, rtx x, int code)
+{
+  rtx operand = x;
+
+  switch (code)
+    {
+    case 0:
+      break;
+    default:
+      LOSE_AND_RETURN ("invalid operand modifier letter", x);
+    }
+
+  switch (GET_CODE (operand))
+    {
+    case REG:
+      if (REGNO (operand) > 7)
+	internal_error ("bad register: %d", REGNO (operand));
+      fprintf (file, "%s", reg_names[REGNO (operand)]);
+      return;
+    case MEM:
+      output_address (GET_MODE (XEXP (operand, 0)), XEXP (operand, 0));
+      return;
+    default:
+      if (CONSTANT_P (operand))
+	{
+	  output_addr_const (file, operand);
+	  return;
+	}
+	LOSE_AND_RETURN ("unexpected operand", x);
+    }
+}
+
+/* Per-function machine data.  */
+struct GTY(()) machine_function
+{
+   /* Number of bytes saved on the stack for callee saved registers.  */
+   int callee_saved_reg_size;
+
+   /* Number of bytes saved on the stack for local variables.  */
+   int local_vars_size;
+
+   /* The sum of 2 sizes: locals vars and padding byte for saving the
+    * registers.  Used in expand_prologue () and expand_epilogue().  */
+   int size_for_adjusting_sp;
+};
+
+/* Zero initialization is OK for all current fields.  */
+
+static struct machine_function *
+smh_init_machine_status (void)
+{
+  return ggc_cleared_alloc<machine_function> ();
+}
+
+/* The TARGET_OPTION_OVERRIDE worker.  */
+static void
+smh_option_override (void)
+{
+  /* Set the per-function-data initializer.  */
+  init_machine_status = smh_init_machine_status;
+}
+
+static void
+smh_compute_frame (void)
+{
+  /* For aligning the local variables.  */
+  int stack_alignment = STACK_BOUNDARY / BITS_PER_UNIT;
+  int padding_locals;
+  int regno;
+
+  /* Padding needed for each element of the frame.  */
+  cfun->machine->local_vars_size = get_frame_size ();
+
+  /* Align to the stack alignment.  */
+  padding_locals = cfun->machine->local_vars_size % stack_alignment;
+  if (padding_locals)
+    padding_locals = stack_alignment - padding_locals;
+
+  cfun->machine->local_vars_size += padding_locals;
+
+  cfun->machine->callee_saved_reg_size = 0;
+
+  /* Save callee-saved registers.  */
+  for (regno = 0; regno < FIRST_PSEUDO_REGISTER; regno++)
+    if (df_regs_ever_live_p (regno) && (! call_used_regs[regno]))
+      cfun->machine->callee_saved_reg_size += 4;
+
+  cfun->machine->size_for_adjusting_sp =
+    crtl->args.pretend_args_size
+    + cfun->machine->local_vars_size
+    + (ACCUMULATE_OUTGOING_ARGS
+       ? (HOST_WIDE_INT) crtl->outgoing_args_size : 0);
+}
+
+
+/* Implements the macro INITIAL_ELIMINATION_OFFSET, return the OFFSET.  */
+
+int
+smh_initial_elimination_offset (int from, int to)
+{
+  int ret;
+
+  if ((from) == FRAME_POINTER_REGNUM && (to) == HARD_FRAME_POINTER_REGNUM)
+    {
+      /* Compute this since we need to use cfun->machine->local_vars_size.  */
+      smh_compute_frame ();
+      ret = -cfun->machine->callee_saved_reg_size;
+    }
+  else if ((from) == ARG_POINTER_REGNUM && (to) == HARD_FRAME_POINTER_REGNUM)
+    ret = 0x00;
+  else
+    fprintf (stderr, "Unknown elimination reg pair from:%s to:%s\n", reg_names[from], reg_names[to]);
+    ret = 0x00;
+    //abort ();
+
+  return ret;
+}
+
 /* Return the next register to be used to hold a function argument or
    NULL_RTX if there's no more space.  */
 
@@ -142,6 +276,12 @@ smh_function_value_regno_p (const unsigned int regno)
 #undef TARGET_FUNCTION_VALUE_REGNO_P
 #define TARGET_FUNCTION_VALUE_REGNO_P	smh_function_value_regno_p
 
+#undef TARGET_PRINT_OPERAND
+#define TARGET_PRINT_OPERAND		smh_print_operand
+
+#undef TARGET_OPTION_OVERRIDE
+#define TARGET_OPTION_OVERRIDE		smh_option_override
 
 struct gcc_target targetm = TARGET_INITIALIZER;
 
+#include "gt-smh.h"

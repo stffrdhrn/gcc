@@ -90,25 +90,35 @@ enum reg_class
 
 /* Framework of an Assembler FIle (gcc/doc/tm.texi) */
 
+#undef	ASM_SPEC
 #define ASM_COMMENT_START "#"
 #define ASM_APP_ON ""
 #define ASM_APP_OFF ""
 
+#define TEXT_SECTION_ASM_OP	"\t.text"
+#define DATA_SECTION_ASM_OP	"\t.data"
+
 #define ASM_OUTPUT_ALIGN(stream, power)	\
 	fprintf (stream, "\t.p2align\t%d\n", power)
 
-#define PRINT_OPERAND(s,x,c) (abort(), 0)
 #define PRINT_OPERAND_ADDRESS(s,x) (abort(), 0)
 
 #define GLOBAL_ASM_OP "\t.global\t"
 
 /* Function calling conventions */
 
-#define INITIAL_ELIMINATION_OFFSET(FROM, TO, OFFSET) (abort(), 0)
+extern int smh_initial_elimination_offset (int from, int to);
+
+#define INITIAL_ELIMINATION_OFFSET(FROM, TO, OFFSET) \
+  do { \
+    (OFFSET) = smh_initial_elimination_offset ((FROM), (TO)); \
+  } while (0)
 
 #define CUMULATIVE_ARGS int
 #define INIT_CUMULATIVE_ARGS(ca,fntype,libname,fndecl,n_named_args) \
   (ca = 0)
+
+#define ACCUMULATE_OUTGOING_ARGS 1
 
 #define INITIAL_FRAME_POINTER_OFFSET(DEPTH) (DEPTH) = 0;
 #define FIRST_PARM_OFFSET(F) 0
@@ -122,7 +132,7 @@ enum reg_class
 #define BIGGEST_ALIGNMENT 16
 #define STRICT_ALIGNMENT 1
 #define SLOW_BYTE_ACCESS 1
-#define UNITS_PER_WORD 2
+#define UNITS_PER_WORD 4
 #define STACK_BOUNDARY 32
 #define PARM_BOUNDARY 32
 
@@ -152,7 +162,7 @@ enum reg_class
 /* A macro whose definition is the name of the class to which a vqalid
    base register must belong.  A base register is one used in an
    address which is the register value plus a displacement.  */
-#define BASE_REG_CLASS NO_REGS
+#define BASE_REG_CLASS GENERAL_REGS
 
 #define INDEX_REG_CLASS NO_REGS
 

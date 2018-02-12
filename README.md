@@ -41,3 +41,24 @@ in `smh.h`
  - Don't use `abort()` for `TARGET_` macros.  for now don't define to get default implementation.
  - Remove `CLASS_MAX_NREGS` definition as default implementation is the same.
 
+### P12 differences
+
+It works and also selftests now pass.
+
+ - Dont define `LEGITIMATE_CONSTANT_P` as its default is true and we need
+   `TARGET_...` now anyway.
+ - Define `INITIAL_ELIMINATION_OFFSET` copied from Moxie
+ - Define `machine_function` needed for `INITIAL_ELIMINATION_OFFSET`
+ - Added include for `gt-smh.h` which is needed with option_override
+
+```
+../../local/bin/smh-elf-run -t start
+insn:     # 0x0000107c: $sp = 0x30000
+insn:     # 0x00001082: $fp = 0x0
+insn:     # 0x00001088: jsra 0x1074
+insn:     # 0x00001074: $r0 = 0x555
+insn:     # 0x0000107a: ret (to 0x108e)
+insn:     SIGILL1
+program stopped with signal 4 (Illegal instruction).
+```
+
