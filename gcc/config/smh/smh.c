@@ -33,11 +33,27 @@
       return;				\
     } while (0)
 
+
 static void
 smh_operand_lossage (const char *msg, rtx op)
 {
   debug_rtx (op);
   output_operand_lossage ("%s", msg);
+}
+
+/* The TARGET_PRINT_OPERAND_ADDRESS worker.  */
+void
+smh_print_operand_address (FILE *file, machine_mode m ATTRIBUTE_UNUSED, rtx x)
+{
+  switch (GET_CODE (x))
+    {
+    case REG:
+      fprintf (file, "(%s)", reg_names[REGNO (x)]);
+      break;
+    default:
+      output_addr_const (file, x);
+      break;
+    }
 }
 
 /* The TARGET_PRINT_OPERAND worker.  */
@@ -136,6 +152,67 @@ smh_compute_frame (void)
        ? (HOST_WIDE_INT) crtl->outgoing_args_size : 0);
 }
 
+void
+smh_expand_prologue ()
+{
+  int regno;
+  rtx insn;
+
+  smh_compute_frame ();
+
+  for (regno = 0; regno < FIRST_PSEUDO_REGISTER; regno++)
+    {
+      /* push $sp, $rN  */
+      if (df_regs_ever_live_p (regno) && (!call_used_regs[regno]))
+	{
+	  insn = emit_insn (gen_movsi_push (gen_rtx_REG (Pmode, regno)));
+	  RTX_FRAME_RELATED_P (insn) = 1;
+	}
+    }
+
+  if (cfun->machine->size_for_adjusting_sp > 0)
+    {
+      /* ldi.l $r5, -SP_ADJUST  */
+      /* add   $sp, $sp, $r5      */
+      insn = emit_insn (gen_movsi (gen_rtx_REG (Pmode, SMH_R5),
+				   GEN_INT (-cfun->machine->size_for_adjusting_sp)));
+      RTX_FRAME_RELATED_P (insn) = 1;
+      insn = emit_insn (gen_addsi3 (stack_pointer_rtx,
+				    stack_pointer_rtx,
+				    gen_rtx_REG (Pmode, SMH_R5)));
+      RTX_FRAME_RELATED_P (insn) = 1;
+    }
+}
+
+void
+smh_expand_epilogue ()
+{
+  int regno;
+  rtx insn;
+
+  if (cfun->machine->callee_saved_reg_size > 0)
+    {
+      /* ldi.l $r5, -REG_SIZE  */
+      /* add   $sp, $fp, $r5   */
+      /* pop   $rN, $sp        */
+      insn = emit_insn (gen_movsi (gen_rtx_REG (Pmode, SMH_R5),
+				   GEN_INT (-cfun->machine->callee_saved_reg_size)));
+      RTX_FRAME_RELATED_P (insn) = 1;
+      insn = emit_insn (gen_addsi3 (stack_pointer_rtx,
+				    hard_frame_pointer_rtx,
+				    gen_rtx_REG (Pmode, SMH_R5)));
+      RTX_FRAME_RELATED_P (insn) = 1;
+
+      for (regno = FIRST_PSEUDO_REGISTER; regno > 0; --regno)
+	if (df_regs_ever_live_p(regno) && (! call_used_regs[regno]))
+	  {
+	    insn = emit_insn (gen_movsi_pop (gen_rtx_REG (Pmode, regno)));
+	    RTX_FRAME_RELATED_P (insn) = 1;
+	  }
+    }
+  insn = emit_jump_insn (gen_returner ());
+  RTX_FRAME_RELATED_P (insn) = 1;
+}
 
 /* Implements the macro INITIAL_ELIMINATION_OFFSET, return the OFFSET.  */
 
@@ -150,12 +227,20 @@ smh_initial_elimination_offset (int from, int to)
       smh_compute_frame ();
       ret = -cfun->machine->callee_saved_reg_size;
     }
+  else if ((from) == FRAME_POINTER_REGNUM && (to) == STACK_POINTER_REGNUM)
+    ret = 0x100;
+  else if ((from) == ARG_POINTER_REGNUM && (to) == FRAME_POINTER_REGNUM)
+    ret = 0x600;
+  else if ((from) == ARG_POINTER_REGNUM && (to) == STACK_POINTER_REGNUM)
+    ret = 0x1000;
   else if ((from) == ARG_POINTER_REGNUM && (to) == HARD_FRAME_POINTER_REGNUM)
     ret = 0x00;
   else
-    fprintf (stderr, "Unknown elimination reg pair from:%s to:%s\n", reg_names[from], reg_names[to]);
-    ret = 0x00;
-    //abort ();
+    {
+      fprintf (stderr, "Unknown elimination reg pair from:%s to:%s\n", reg_names[from], reg_names[to]);
+      ret = 0x00;
+      //abort ();
+    }
 
   return ret;
 }
@@ -186,7 +271,7 @@ smh_function_arg_advance (cumulative_args_t cum_v, machine_mode mode,
 {
   CUMULATIVE_ARGS *cum = get_cumulative_args (cum_v);
 
-  *cum = (*cum < 7
+  *cum = (*cum < SMH_R5
 	  ? *cum + ((3 + SMH_FUNCTION_ARG_SIZE (mode, type)) / 4)
 	  : *cum);
 }
@@ -215,6 +300,12 @@ smh_legitimate_address_p (machine_mode mode ATTRIBUTE_UNUSED, rtx x,
       || GET_CODE (x) == CONST)
     return true;
   return false;
+}
+
+static bool
+smh_can_eliminate (const int from ATTRIBUTE_UNUSED, const int to)
+{
+  return (to == SMH_SFP) || (to == SMH_SP);
 }
 
 static rtx
@@ -269,6 +360,8 @@ smh_function_value_regno_p (const unsigned int regno)
 #undef	TARGET_LEGITIMATE_ADDRESS_P
 #define	TARGET_LEGITIMATE_ADDRESS_P	smh_legitimate_address_p
 
+#undef TARGET_CAN_ELIMINATE
+#define TARGET_CAN_ELIMINATE		smh_can_eliminate
 #undef TARGET_FUNCTION_VALUE
 #define TARGET_FUNCTION_VALUE		smh_function_value
 #undef TARGET_LIBCALL_VALUE
@@ -278,9 +371,14 @@ smh_function_value_regno_p (const unsigned int regno)
 
 #undef TARGET_PRINT_OPERAND
 #define TARGET_PRINT_OPERAND		smh_print_operand
+#undef TARGET_PRINT_OPERAND_ADDRESS
+#define TARGET_PRINT_OPERAND_ADDRESS	smh_print_operand_address
 
 #undef TARGET_OPTION_OVERRIDE
 #define TARGET_OPTION_OVERRIDE		smh_option_override
+
+#undef TARGET_CONSTANT_ALIGNMENT
+#define TARGET_CONSTANT_ALIGNMENT	constant_alignment_word_strings
 
 struct gcc_target targetm = TARGET_INITIALIZER;
 

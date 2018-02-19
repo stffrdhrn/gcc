@@ -3,6 +3,14 @@
 #ifndef GCC_SMH_H
 #define GCC_SMH_H
 
+/* Start files */
+#undef STARTFILE_SPEC
+#define STARTFILE_SPEC "crt0%O%s"
+#undef ENDFILE_SPEC
+#define ENDFILE_SPEC ""
+#undef LIB_SPEC
+#define LIB_SPEC "%{!shared:%{!symbolic:-lc -lsim}}"
+
 /* Data Types */
 
 #define INT_TYPE_SIZE 32
@@ -34,13 +42,15 @@
 #define SMH_R4 6
 #define SMH_R5 7
 #define SMH_PC 8
+#define SMH_SFP 9
+#define SMH_SAP 10
 
 #define REGISTER_NAMES {	\
   "$fp", "$sp", "$r0", "$r1",	\
   "$r2", "$r3", "$r4", "$r5",	\
-  "$pc" }
+  "$pc", "?fp", "?ap"  }
 
-#define FIRST_PSEUDO_REGISTER 9
+#define FIRST_PSEUDO_REGISTER 11
 
 enum reg_class
 {
@@ -55,31 +65,33 @@ enum reg_class
 
 #define REG_CLASS_CONTENTS \
 { { 0x00000000 },	\
-  { (1<<9) - 1 },	\
-  { (1<<8) },		\
-  { (1<<10) -1 }	\
+  { 0x000000ff },	\
+  { 0x00000700 },	\
+  { 0x000007ff }	\
 }
 
 #define REG_CLASS_NAMES { \
-	"NO_REGS",	\
-	"GENERAL_REGS",	\
-	"SPECIAL_REGS",	\
-	"ALL_REGS" }
+  "NO_REGS",		\
+  "GENERAL_REGS",	\
+  "SPECIAL_REGS",	\
+  "ALL_REGS" }
 
 #define FIXED_REGISTERS { \
   1, 1, 0, 0,	\
   0, 0, 0, 0,	\
-  1 }
+  1, 1, 1 }
 
 #define CALL_USED_REGISTERS { \
-  1, 1, 1, 0,	\
+  1, 1, 1, 1,	\
   0, 0, 0, 1,	\
-  1 }
+  1, 1, 1 }
 
-#define REGNO_REG_CLASS(regno) ((regno < 9) ? GENERAL_REGS : SPECIAL_REGS)
+#define REGNO_REG_CLASS(regno) ((regno < SMH_PC) ? GENERAL_REGS : SPECIAL_REGS)
 
 #define ELIMINABLE_REGS							\
-{{ FRAME_POINTER_REGNUM, HARD_FRAME_POINTER_REGNUM },			\
+{{ FRAME_POINTER_REGNUM, STACK_POINTER_REGNUM },			\
+ { FRAME_POINTER_REGNUM, HARD_FRAME_POINTER_REGNUM },			\
+ { ARG_POINTER_REGNUM,   STACK_POINTER_REGNUM },			\
  { ARG_POINTER_REGNUM,   HARD_FRAME_POINTER_REGNUM }}
 
 #define CLASS_MAX_NREGS(class,mode)	\
@@ -108,6 +120,8 @@ enum reg_class
 /* Function calling conventions */
 
 extern int smh_initial_elimination_offset (int from, int to);
+extern void smh_expand_epilogue ();
+extern void smh_expand_prologue ();
 
 #define INITIAL_ELIMINATION_OFFSET(FROM, TO, OFFSET) \
   do { \
@@ -116,20 +130,37 @@ extern int smh_initial_elimination_offset (int from, int to);
 
 #define CUMULATIVE_ARGS int
 #define INIT_CUMULATIVE_ARGS(ca,fntype,libname,fndecl,n_named_args) \
-  (ca = 0)
+  (ca = SMH_R0)
 
 #define ACCUMULATE_OUTGOING_ARGS 1
 
-#define INITIAL_FRAME_POINTER_OFFSET(DEPTH) (DEPTH) = 0;
-#define FIRST_PARM_OFFSET(F) 0
+//#define INITIAL_FRAME_POINTER_OFFSET(DEPTH) (DEPTH) = 0;
+#define FIRST_PARM_OFFSET(F) 8
+
+#define STACK_GROWS_DOWNWARD 1
+#define FRAME_GROWS_DOWNWARD 1
+#define EPILOGUE_USES(R) (R==SMH_R5)
+
 
 /* Storage Layout */
 #define BITS_BIG_ENDIAN 0
 #define BYTES_BIG_ENDIAN 1
 #define WORDS_BIG_ENDIAN 1
 
+/* Structure alignment */
+#define EMPTY_FIELD_BOUNDARY 32
+#define PCC_BITFIELD_TYPE_MATTERS 1
+#define MAX_FIXED_MODE_SIZE 32
+
+#define FASTEST_ALIGNMENT 32
+#define DATA_ALIGNMENT(TYPE, ALIGN) \
+  (TREE_CODE (TYPE) == ARRAY_TYPE	\
+    && TYPE_MODE (TREE_TYPE (TYPE)) == QImode \
+    && (ALIGN) < FASTEST_ALIGNMENT	\
+    ? FASTEST_ALIGNMENT : (ALIGN))
+
 #define FUNCTION_BOUNDARY 16
-#define BIGGEST_ALIGNMENT 16
+#define BIGGEST_ALIGNMENT 32
 #define STRICT_ALIGNMENT 1
 #define SLOW_BYTE_ACCESS 1
 #define UNITS_PER_WORD 4
@@ -149,11 +180,11 @@ extern int smh_initial_elimination_offset (int from, int to);
 #define STACK_POINTER_REGNUM 1
 #define FRAME_POINTER_REGNUM 0
 
-#define HARD_FRAME_POINTER_REGNUM 0
+#define HARD_FRAME_POINTER_REGNUM SMH_SFP
 
 /* The register number of the arg pointer register, which is used to
    access the function's argument list.  */
-#define ARG_POINTER_REGNUM 0
+#define ARG_POINTER_REGNUM SMH_SAP
 
 /* A C expression that is nonzero if REGNO is the number of a hard
    register in which function arguments are sometimes passed.  */

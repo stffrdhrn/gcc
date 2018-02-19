@@ -62,3 +62,12 @@ insn:     SIGILL1
 program stopped with signal 4 (Illegal instruction).
 ```
 
+### P13 differences
+
+  - Use `TARGET_CAN_ELIMINATE` instead of poison `CAN_ELIMINATE`
+  - Define Fake `FP` and `AG` registers differently
+
+Had more issues, currently prologue/epilogue do not generate push and pop
+instructions for some reason.  However, moving on.
+
+

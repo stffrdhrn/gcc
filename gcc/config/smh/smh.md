@@ -13,8 +13,21 @@
 	  (match_operand:SI 1 "register_operand" "r,r")
 	  (match_operand:SI 2 "general_operand" "r,n")))]
   ""
-  "*
-  abort();")
+  "add.l  %0, %1, %2")
+
+;; Move
+
+(define_insn "movsi_push"
+  [(set:SI (mem:SI (pre_dec:SI (reg:SI 1)))
+	   (match_operand:SI 0 "register_operand" "r"))]
+  ""
+  "push  $sp, %0")
+
+(define_insn "movsi_pop"
+  [(set:SI (match_operand:SI 0 "register_operand" "=r")
+	   (mem:SI (post_inc:SI (reg:SI 1))))]
+  ""
+  "pop   $sp, %0")
 
 (define_expand "movsi"
   [(set (match_operand:SI 0 "nonimmediate_operand" "")
@@ -22,12 +35,12 @@
   ""
   "
 {
-  if (GET_CODE (operands[0]) == MEM)
+  if (MEM_P (operands[0]))
     operands[1] = force_reg (SImode, operands[1]);
 }")
 
 (define_insn "*movsi"
-  [(set (match_operand:SI 0 "nonimmediate_operand" "=r,r")
+  [(set (match_operand:SI 0 "register_operand" "=r,r")
 	(match_operand:SI 1 "general_operand" "r,i"))]
   "register_operand (operands[0], SImode)
    || register_operand (operands[1], SImode)"
@@ -41,7 +54,7 @@
   ""
   "
 {
-  if (GET_CODE (operands[0]) == MEM)
+  if (MEM_P (operands[0]))
     operands[1] = force_reg (HImode, operands[1]);
 }")
 
@@ -62,6 +75,12 @@
   gcc_assert (GET_CODE (operands[0]) == MEM);
 })
 
+(define_insn "*call_indirect"
+  [(call (mem:QI (match_operand:SI 0 "register_operand" "r"))
+	 (match_operand 1 "" ""))]
+  ""
+  "jsr	%0")
+
 (define_insn "*call"
   [(call (mem:QI (match_operand:SI 0 "immediate_operand" "i"))
 	 (match_operand 1 "" ""))]
@@ -76,6 +95,13 @@
 {
   gcc_assert (GET_CODE (operands[1]) == MEM);
 })
+
+(define_insn "*call_value_indirect"
+  [(set (match_operand 0 "register_operand" "=r")
+	(call (mem:QI (match_operand:SI 1 "register_operand" "r"))
+	      (match_operand 2 "" "")))]
+  ""
+  "jsr	%1")
 
 (define_insn "*call_value"
   [(set (match_operand 0 "register_operand" "=r")
@@ -96,7 +122,27 @@
 
 ;; Calling conventions
 
-(define_insn "epilogue"
+(define_expand "prologue"
+  [(clobber (const_int 0))]
+  ""
+  "
+{
+  smh_expand_prologue ();
+  DONE;
+}
+")
+
+(define_expand "epilogue"
   [(return)]
   ""
+  "
+{
+  smh_expand_epilogue ();
+  DONE;
+}
+")
+
+(define_insn "returner"
+  [(return)]
+  "reload_completed"
   "ret")
