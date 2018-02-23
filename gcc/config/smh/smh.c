@@ -203,7 +203,7 @@ smh_expand_epilogue ()
 				    gen_rtx_REG (Pmode, SMH_R5)));
       RTX_FRAME_RELATED_P (insn) = 1;
 
-      for (regno = FIRST_PSEUDO_REGISTER; regno > 0; --regno)
+      for (regno = FIRST_PSEUDO_REGISTER - 1; regno > 0; --regno)
 	if (df_regs_ever_live_p(regno) && (! call_used_regs[regno]))
 	  {
 	    insn = emit_insn (gen_movsi_pop (gen_rtx_REG (Pmode, regno)));
@@ -302,12 +302,6 @@ smh_legitimate_address_p (machine_mode mode ATTRIBUTE_UNUSED, rtx x,
   return false;
 }
 
-static bool
-smh_can_eliminate (const int from ATTRIBUTE_UNUSED, const int to)
-{
-  return (to == SMH_SFP) || (to == SMH_SP);
-}
-
 static rtx
 smh_function_value (const_tree valtype,
 		      const_tree fntype_or_decl ATTRIBUTE_UNUSED,
@@ -360,8 +354,6 @@ smh_function_value_regno_p (const unsigned int regno)
 #undef	TARGET_LEGITIMATE_ADDRESS_P
 #define	TARGET_LEGITIMATE_ADDRESS_P	smh_legitimate_address_p
 
-#undef TARGET_CAN_ELIMINATE
-#define TARGET_CAN_ELIMINATE		smh_can_eliminate
 #undef TARGET_FUNCTION_VALUE
 #define TARGET_FUNCTION_VALUE		smh_function_value
 #undef TARGET_LIBCALL_VALUE

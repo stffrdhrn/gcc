@@ -88,11 +88,11 @@ enum reg_class
 
 #define REGNO_REG_CLASS(regno) ((regno < SMH_PC) ? GENERAL_REGS : SPECIAL_REGS)
 
-#define ELIMINABLE_REGS							\
-{{ FRAME_POINTER_REGNUM, STACK_POINTER_REGNUM },			\
- { FRAME_POINTER_REGNUM, HARD_FRAME_POINTER_REGNUM },			\
+#define ELIMINABLE_REGS	{						\
+ { ARG_POINTER_REGNUM,   HARD_FRAME_POINTER_REGNUM },			\
  { ARG_POINTER_REGNUM,   STACK_POINTER_REGNUM },			\
- { ARG_POINTER_REGNUM,   HARD_FRAME_POINTER_REGNUM }}
+ { FRAME_POINTER_REGNUM, HARD_FRAME_POINTER_REGNUM },			\
+ { FRAME_POINTER_REGNUM, STACK_POINTER_REGNUM }	}
 
 #define CLASS_MAX_NREGS(class,mode)	\
   ((GET_MODE_SIZE (mode) + UNITS_PER_WORD - 1)	\
@@ -177,10 +177,10 @@ extern void smh_expand_prologue ();
 /* Pointer mode */
 #define Pmode	SImode
 #define FUNCTION_MODE	QImode
-#define STACK_POINTER_REGNUM 1
-#define FRAME_POINTER_REGNUM 0
+#define STACK_POINTER_REGNUM SMH_SP
+#define FRAME_POINTER_REGNUM SMH_FP
 
-#define HARD_FRAME_POINTER_REGNUM SMH_SFP
+#define HARD_FRAME_POINTER_REGNUM SMH_FP
 
 /* The register number of the arg pointer register, which is used to
    access the function's argument list.  */
@@ -188,7 +188,7 @@ extern void smh_expand_prologue ();
 
 /* A C expression that is nonzero if REGNO is the number of a hard
    register in which function arguments are sometimes passed.  */
-#define FUNCTION_ARG_REGNO_P(r) (r > 1 && r < 4)
+#define FUNCTION_ARG_REGNO_P(r) (r >= SMH_R1 && r < SMH_R5)
 
 /* A macro whose definition is the name of the class to which a vqalid
    base register must belong.  A base register is one used in an

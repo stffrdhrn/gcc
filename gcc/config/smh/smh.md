@@ -2,32 +2,47 @@
 
 (define_attr "length" "" (const_int 2))
 
+(define_constraint "W"
+ "A register inderect memory operand"
+ (and (match_code "mem")
+      (match_test "REG_P (XEXP (op, 0))
+		   && REGNO_OK_FOR_BASE_P (REGNO (op))")))
+
+(define_predicate "smh_general_movsrc_operand"
+  (match_code "mem,const_int,reg,subreg,symbol_ref,label_ref,const")
+{
+  if (GET_CODE (op) == MEM && GET_CODE (XEXP (op, 0)) == LABEL_REF)
+    return 1;
+
+  return general_operand (op, mode);
+})
+
 (define_insn "nop"
   [(const_int 0)]
   ""
   "nop")
 
 (define_insn "addsi3"
-  [(set (match_operand:SI 0 "register_operand" "=r,r")
+  [(set (match_operand:SI 0 "register_operand" "=r")
 	 (plus:SI
-	  (match_operand:SI 1 "register_operand" "r,r")
-	  (match_operand:SI 2 "general_operand" "r,n")))]
+	  (match_operand:SI 1 "register_operand" "r")
+	  (match_operand:SI 2 "general_operand" "r")))]
   ""
-  "add.l  %0, %1, %2")
+  "add.l\t%0, %1, %2")
 
 ;; Move
 
 (define_insn "movsi_push"
-  [(set:SI (mem:SI (pre_dec:SI (reg:SI 1)))
-	   (match_operand:SI 0 "register_operand" "r"))]
+  [(set (mem:SI (pre_dec:SI (reg:SI 1)))
+	(match_operand:SI 0 "register_operand" "r"))]
   ""
-  "push  $sp, %0")
+  "push\t$sp, %0")
 
 (define_insn "movsi_pop"
-  [(set:SI (match_operand:SI 0 "register_operand" "=r")
-	   (mem:SI (post_inc:SI (reg:SI 1))))]
+  [(set (match_operand:SI 0 "register_operand" "=r")
+	(mem:SI (post_inc:SI (reg:SI 1))))]
   ""
-  "pop   $sp, %0")
+  "pop\t%0, $sp")
 
 (define_expand "movsi"
   [(set (match_operand:SI 0 "nonimmediate_operand" "")
@@ -40,13 +55,17 @@
 }")
 
 (define_insn "*movsi"
-  [(set (match_operand:SI 0 "register_operand" "=r,r")
-	(match_operand:SI 1 "general_operand" "r,i"))]
+  [(set (match_operand:SI 0 "nonimmediate_operand" "=r,r,W,m,r,r")
+	(match_operand:SI 1 "smh_general_movsrc_operand" "r,i,r,r,W,m"))]
   "register_operand (operands[0], SImode)
    || register_operand (operands[1], SImode)"
   "@
-  mov	%0, %1
-  ldi.l %0, %1")
+  mov\t%0, %1
+  ldi.l\t%0, %1
+  st.l\t%0, %1
+  sta.l\t%0, %1
+  ld.l\t%0, %1
+  lda.l\t%0, %1")
 
 (define_expand "movhi"
   [(set (match_operand:HI 0 "nonimmediate_operand" "")
@@ -63,7 +82,7 @@
 	(match_operand:HI 1 "general_operand" "r"))]
   "register_operand (operands[0], HImode)
    || register_operand (operands[1], HImode)"
-  "mov	%0, %1")
+  "mov\t%0, %1")
 
 ;; Jump and Call instructions
 
@@ -79,13 +98,13 @@
   [(call (mem:QI (match_operand:SI 0 "register_operand" "r"))
 	 (match_operand 1 "" ""))]
   ""
-  "jsr	%0")
+  "jsr\t%0")
 
 (define_insn "*call"
   [(call (mem:QI (match_operand:SI 0 "immediate_operand" "i"))
 	 (match_operand 1 "" ""))]
   ""
-  "jsra	%0")
+  "jsra\t%0")
 
 (define_expand "call_value"
   [(set (match_operand 0 "" "")
@@ -101,14 +120,14 @@
 	(call (mem:QI (match_operand:SI 1 "register_operand" "r"))
 	      (match_operand 2 "" "")))]
   ""
-  "jsr	%1")
+  "jsr\t%1")
 
 (define_insn "*call_value"
   [(set (match_operand 0 "register_operand" "=r")
 	(call (mem:QI (match_operand:SI 1 "immediate_operand" "i"))
 	      (match_operand 2 "" "")))]
   ""
-  "jsra	%1")
+  "jsra\t%1")
 
 (define_insn "indirect_jump"
   [(set (pc) (match_operand:SI 0 "general_operand" "r"))]
@@ -118,7 +137,7 @@
 (define_insn "jump"
   [(set (pc) (label_ref (match_operand 0 "" "")))]
   ""
-  "jmp %l0%#")
+  "jmp\t%l0%#")
 
 ;; Calling conventions
 
