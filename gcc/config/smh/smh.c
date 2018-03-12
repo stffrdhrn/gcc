@@ -255,7 +255,7 @@ smh_function_arg (cumulative_args_t cum_v, machine_mode mode,
 {
   CUMULATIVE_ARGS *cum = get_cumulative_args (cum_v);
 
-  if (*cum < 8)
+  if (*cum < 4)
     return gen_rtx_REG (mode, *cum);
   else
     return NULL_RTX;
