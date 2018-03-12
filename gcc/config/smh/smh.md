@@ -50,9 +50,36 @@
   ""
   "
 {
-  if (MEM_P (operands[0]))
-    operands[1] = force_reg (SImode, operands[1]);
+  if (! (reload_in_progress || reload_completed))
+  {
+    if (MEM_P (operands[0]))
+      {
+	operands[1] = force_reg (SImode, operands[1]);
+	if (GET_CODE (XEXP (operands[0], 0)) == MEM)
+	  operands[0] = gen_rtx_MEM (SImode, force_reg (SImode, XEXP (operands[0], 0)));
+      }
+      else
+	if (MEM_P (operands[1])
+	    && GET_CODE (XEXP (operands[1], 0)) == MEM)
+          operands[1] = gen_rtx_MEM (SImode, force_reg (SImode, XEXP (operands[1], 0)));
+  }
 }")
+
+(define_insn "*loadsi_offset"
+  [(set (match_operand:SI 0 "register_operand" "=r")
+	(mem:SI (plus:SI
+	 	  (match_operand:SI 1 "register_operand" "r")
+	  	  (match_operand:SI 2 "immediate_operand" "i"))))]
+  ""
+  "ldo.l\t%0, %2(%1)")
+
+(define_insn "*storesi_offset"
+  [(set (mem:SI (plus:SI
+	 	  (match_operand:SI 1 "register_operand" "r")
+	  	  (match_operand:SI 2 "immediate_operand" "i")))
+	(match_operand:SI 0 "register_operand" "r"))]
+  ""
+  "sto.l\t%2(%1), %0")
 
 (define_insn "*movsi"
   [(set (match_operand:SI 0 "nonimmediate_operand" "=r,r,W,m,r,r")
