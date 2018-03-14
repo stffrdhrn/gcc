@@ -45,7 +45,7 @@
   "pop\t%0, $sp")
 
 (define_expand "movsi"
-  [(set (match_operand:SI 0 "nonimmediate_operand" "")
+  [(set (match_operand:SI 0 "general_operand" "")
 	(match_operand:SI 1 "general_operand" ""))]
   ""
   "
@@ -55,12 +55,12 @@
     if (MEM_P (operands[0]))
       {
 	operands[1] = force_reg (SImode, operands[1]);
-	if (GET_CODE (XEXP (operands[0], 0)) == MEM)
+	if (MEM_P (XEXP (operands[0], 0)))
 	  operands[0] = gen_rtx_MEM (SImode, force_reg (SImode, XEXP (operands[0], 0)));
       }
       else
 	if (MEM_P (operands[1])
-	    && GET_CODE (XEXP (operands[1], 0)) == MEM)
+	    && MEM_P (XEXP (operands[1], 0)))
           operands[1] = gen_rtx_MEM (SImode, force_reg (SImode, XEXP (operands[1], 0)));
   }
 }")

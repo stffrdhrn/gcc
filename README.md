@@ -1,5 +1,9 @@
 ## GCC with SMH Dummy Patches
 
+**DONE** I have done up to step 15 and I am calling it a success.  I have
+learned enough about writing the GCC backend to get started on the or1k backed.
+Therefore I am abondoning this port.
+
 This is the port of the dummy architecture smh.  This is done following the
 21 patches series for ggx which became moxie.
 
