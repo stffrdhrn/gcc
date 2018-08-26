@@ -467,6 +467,9 @@ nios2-*-*)
 nvptx-*-*)
 	cpu_type=nvptx
 	;;
+or1k*-*-*)
+	cpu_type=or1k
+	;;
 powerpc*-*-*spe*)
 	cpu_type=powerpcspe
 	extra_headers="ppc-asm.h altivec.h spe.h ppu_intrinsics.h paired.h spu2vmx.h vec_types.h si2vmx.h htmintrin.h htmxlintrin.h"
@@ -2461,6 +2464,25 @@ nvptx-*)
 		extra_programs="${extra_programs} mkoffload\$(exeext)"
 		tm_file="${tm_file} nvptx/offload.h"
 	fi
+	;;
+or1k*-*-*)
+	tm_file="elfos.h ${tm_file}"
+	tmake_file="${tmake_file} or1k/t-or1k"
+        case ${target} in
+        or1k*-*-linux*)
+                tm_file="${tm_file} gnu-user.h linux.h glibc-stdint.h"
+                tm_file="${tm_file} or1k/linux.h"
+                enable_initfini_array=yes
+                ;;
+	or1k*-*-elf*)
+		tm_file="${tm_file} newlib-stdint.h or1k/elf.h"
+		extra_options="${extra_options} or1k/elf.opt"
+		;;
+	or1k*-*-rtems*)
+		tm_file="${tm_file} newlib-stdint.h rtems.h"
+		tmake_file="${tmake_file} t-rtems"
+		;;
+	esac
 	;;
 pdp11-*-*)
 	tm_file="${tm_file} newlib-stdint.h"
