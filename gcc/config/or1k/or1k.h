@@ -30,7 +30,6 @@
       builtin_define ("__or1k__");		\
       builtin_assert ("cpu=or1k");		\
       builtin_assert ("machine=or1k");		\
-      builtin_define ("__BIG_ENDIAN__");	\
     }						\
   while (0)
 
@@ -50,8 +49,6 @@
 #define STACK_BOUNDARY 32
 #define PREFERRED_STACK_BOUNDARY 32
 #define MAX_FIXED_MODE_SIZE 64
-
-#define TARGET_FLOAT_FORMAT IEEE_FLOAT_FORMAT
 
 /* Layout of source language data types.  */
 

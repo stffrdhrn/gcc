@@ -24,12 +24,10 @@
 /* elfos.h should have already been included.  Now just override
    any conflicting definitions and add any extras.  */
 
-#define NO_IMPLICIT_EXTERN_C
-
 #define TARGET_OS_CPP_BUILTINS() \
   GNU_USER_TARGET_OS_CPP_BUILTINS ()
 
-#define GLIBC_DYNAMIC_LINKER "/lib/ld.so.1"
+#define GLIBC_DYNAMIC_LINKER "/lib/ld-linux-or1k.so.1"
 
 #undef MUSL_DYNAMIC_LINKER
 #define MUSL_DYNAMIC_LINKER  "/lib/ld-musl-or1k.so.1"
