@@ -2161,6 +2161,8 @@ or1k_output_mi_thunk (FILE *file, tree thunk_fndecl ATTRIBUTE_UNUSED,
 #define TARGET_TRAMPOLINE_INIT or1k_trampoline_init
 #undef TARGET_FRAME_POINTER_REQUIRED
 #define TARGET_FRAME_POINTER_REQUIRED or1k_frame_pointer_required
+#undef TARGET_CUSTOM_FUNCTION_DESCRIPTORS
+#define TARGET_CUSTOM_FUNCTION_DESCRIPTORS 1
 
 /* Assembly generation.  */
 #undef  TARGET_PRINT_OPERAND
