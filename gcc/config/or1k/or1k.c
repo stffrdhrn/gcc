@@ -2014,6 +2014,9 @@ or1k_output_mi_thunk (FILE *file, tree thunk_fndecl ATTRIBUTE_UNUSED,
 #undef  TARGET_HAVE_TLS
 #define TARGET_HAVE_TLS true
 
+#undef  TARGET_HAVE_SPECULATION_SAFE_VALUE
+#define TARGET_HAVE_SPECULATION_SAFE_VALUE speculation_safe_value_not_needed
+
 /* Calling Conventions.  */
 #undef TARGET_FUNCTION_VALUE
 #define TARGET_FUNCTION_VALUE or1k_function_value
