@@ -574,6 +574,18 @@
   [(set_attr "length" "16")
    (set_attr "type" "multi")])
 
+;; Block memory operations from being scheduled across frame (de)allocation.
+(define_insn "frame_addsi3"
+  [(set (match_operand:SI 0 "register_operand" "=r,r")
+	  (plus:SI
+	   (match_operand:SI 1 "register_operand"   "%r,r")
+	   (match_operand:SI 2 "reg_or_s16_operand" " r,I")))
+   (clobber (mem:BLK (scratch)))]
+  "reload_completed"
+  "@
+  l.add\t%0, %1, %2
+  l.addi\t%0, %1, %2")
+
 ;; -------------------------------------------------------------------------
 ;; Atomic Operations
 ;; -------------------------------------------------------------------------

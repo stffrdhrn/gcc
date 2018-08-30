@@ -212,8 +212,8 @@ or1k_expand_prologue (void)
   reg_offset -= this_offset;
   sp_offset -= this_offset;
 
-  insn = emit_insn (gen_addsi3 (stack_pointer_rtx, stack_pointer_rtx,
-				GEN_INT (this_offset)));
+  insn = emit_insn (gen_frame_addsi3 (stack_pointer_rtx, stack_pointer_rtx,
+				      GEN_INT (this_offset)));
   RTX_FRAME_RELATED_P (insn) = 1;
 
   /* Save callee-saved registers.  */
@@ -256,8 +256,8 @@ or1k_expand_prologue (void)
           /* For very large offsets, we need a temporary register.  */
 	  rtx tmp = gen_rtx_REG (Pmode, PE_TMP_REGNUM);
 	  emit_move_insn (tmp, GEN_INT (sp_offset));
-	  insn = emit_insn (gen_addsi3 (stack_pointer_rtx,
-					stack_pointer_rtx, tmp));
+	  insn = emit_insn (gen_frame_addsi3 (stack_pointer_rtx,
+					      stack_pointer_rtx, tmp));
 	  if (!frame_pointer_needed)
 	    {
 	      RTX_FRAME_RELATED_P (insn) = 1;
@@ -276,9 +276,9 @@ or1k_expand_prologue (void)
 	      this_offset = MAX (sp_offset, -32768);
 	      sp_offset -= this_offset;
 
-	      insn = emit_insn (gen_addsi3 (stack_pointer_rtx,
-					    stack_pointer_rtx,
-					    GEN_INT (this_offset)));
+	      insn = emit_insn (gen_frame_addsi3 (stack_pointer_rtx,
+						  stack_pointer_rtx,
+						  GEN_INT (this_offset)));
 	      if (!frame_pointer_needed)
 		RTX_FRAME_RELATED_P (insn) = 1;
 	    }
@@ -320,9 +320,9 @@ or1k_expand_epilogue (void)
 	  /* Reset the stack pointer to the bottom of the saved regs.  */
 	  sp_offset -= reg_offset;
 	  reg_offset = 0;
-	  insn = emit_insn (gen_addsi3 (stack_pointer_rtx,
-					hard_frame_pointer_rtx,
-					GEN_INT (-sp_offset)));
+	  insn = emit_insn (gen_frame_addsi3 (stack_pointer_rtx,
+					      hard_frame_pointer_rtx,
+					      GEN_INT (-sp_offset)));
 	  RTX_FRAME_RELATED_P (insn) = 1;
 	  add_reg_note (insn, REG_CFA_DEF_CFA,
 			plus_constant (Pmode, stack_pointer_rtx, sp_offset));
@@ -332,8 +332,8 @@ or1k_expand_epilogue (void)
 	  /* For very large offsets, we need a temporary register.  */
 	  rtx tmp = gen_rtx_REG (Pmode, PE_TMP_REGNUM);
 	  emit_move_insn (tmp, GEN_INT (reg_offset));
-	  insn = emit_insn (gen_addsi3 (stack_pointer_rtx,
-					stack_pointer_rtx, tmp));
+	  insn = emit_insn (gen_frame_addsi3 (stack_pointer_rtx,
+					      stack_pointer_rtx, tmp));
 	  sp_offset -= reg_offset;
 	  reg_offset = 0;
 	  RTX_FRAME_RELATED_P (insn) = 1;
@@ -349,9 +349,9 @@ or1k_expand_epilogue (void)
 	      reg_offset -= this_offset;
 	      sp_offset -= this_offset;
 
-	      insn = emit_insn (gen_addsi3 (stack_pointer_rtx,
-					    stack_pointer_rtx,
-					    GEN_INT (this_offset)));
+	      insn = emit_insn (gen_frame_addsi3 (stack_pointer_rtx,
+						  stack_pointer_rtx,
+						  GEN_INT (this_offset)));
 	      RTX_FRAME_RELATED_P (insn) = 1;
 	      add_reg_note (insn, REG_CFA_DEF_CFA,
 			    plus_constant (Pmode, stack_pointer_rtx,
@@ -388,8 +388,8 @@ or1k_expand_epilogue (void)
   gcc_assert (reg_offset == sp_offset);
 
   /* Restore stack pointer.  */
-  insn = emit_insn (gen_addsi3 (stack_pointer_rtx, stack_pointer_rtx,
-				GEN_INT (sp_offset)));
+  insn = emit_insn (gen_frame_addsi3 (stack_pointer_rtx, stack_pointer_rtx,
+				      GEN_INT (sp_offset)));
   RTX_FRAME_RELATED_P (insn) = 1;
   REG_NOTES (insn) = cfa_restores;
   add_reg_note (insn, REG_CFA_DEF_CFA, stack_pointer_rtx);
