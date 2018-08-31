@@ -84,7 +84,9 @@ or1k_init_machine_status (void)
 }
 
 
-/* The TARGET_OPTION_OVERRIDE worker.  */
+/* Worker for TARGET_OPTION_OVERRIDE.
+   We currently only use this to setup init_machine_status.  */
+
 static void
 or1k_option_override (void)
 {
@@ -126,8 +128,12 @@ callee_saved_regno_p (int regno)
     }
 }
 
-/* Compute the size of the local area and the size to be adjusted by the
- * prologue and epilogue.  This is now the TARGET_COMPUTE_FRAME_LAYOUT worker.
+/* Worker for TARGET_COMPUTE_FRAME_LAYOUT.
+ * Compute an populate the machine specific function attributes which are
+ * globally accessible via cfun->machine.  These include the sizes needed for
+ * stack stored local variables, callee saved registers and space for stack
+ * arguments which may be passed to a next function.  The values are used for
+ * the epilogue, prologue and eliminations.
  *
  * OpenRISC stack grows downwards and contains:
  *
@@ -138,8 +144,8 @@ callee_saved_regno_p (int regno)
  *  return address      r9        |     |
  *  old frame pointer   r2       (+)    |-- machine->total_size
  *  callee saved regs             |     | > machine->callee_saved_reg_size
- *  local variables               |  ---/ > machine->local_vars_size       <-FP
- *  sub function args     <-- r1 [SP]
+ *  local variables               |     | > machine->local_vars_size       <-FP
+ *  next function args    <-- r1 [SP]---/ > machine->args_size
  *  ----------------------------  |
  *                               (-)
  *         (future)               |
@@ -170,6 +176,9 @@ or1k_compute_frame_layout (void)
   cfun->machine->total_size = save_reg_size + local_vars_size + args_size;
 }
 
+/* Emit rtl to save register REGNO contents to stack memory at the given OFFSET
+   from the current stack pointer.  */
+
 static void
 or1k_save_reg (int regno, HOST_WIDE_INT offset)
 {
@@ -180,6 +189,9 @@ or1k_save_reg (int regno, HOST_WIDE_INT offset)
   RTX_FRAME_RELATED_P (insn) = 1;
 }
 
+/* Emit rtl to restore register REGNO contents from stack memory at the given
+   OFFSET from the current stack pointer.  */
+
 static rtx
 or1k_restore_reg (int regno, HOST_WIDE_INT offset, rtx cfa_restores)
 {
@@ -189,6 +201,8 @@ or1k_restore_reg (int regno, HOST_WIDE_INT offset, rtx cfa_restores)
   emit_move_insn (reg, mem);
   return alloc_reg_note (REG_CFA_RESTORE, reg, cfa_restores);
 }
+
+/* Expand the "prologue" pattern.  */
 
 void
 or1k_expand_prologue (void)
@@ -299,6 +313,8 @@ or1k_expand_prologue (void)
   delete_insn (set_got_insn);
 }
 
+/* Expand the "epilogue" pattern.  */
+
 void
 or1k_expand_epilogue (void)
 {
@@ -400,7 +416,10 @@ or1k_expand_epilogue (void)
 			   EH_RETURN_STACKADJ_RTX));
 }
 
-/* Worker for TARGET_INIT_PIC_REG.  */
+/* Worker for TARGET_INIT_PIC_REG.
+   Initialize the cfun->machine->set_got_insn rtx and insert it at the entry
+   of the current function.  The rtx is just a temporary placeholder for
+   the GOT and will be replaced or removed during or1k_expand_prologue.  */
 
 static void
 or1k_init_pic_reg (void)
