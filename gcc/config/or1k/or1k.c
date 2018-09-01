@@ -442,7 +442,8 @@ or1k_init_pic_reg (void)
 #undef TARGET_USE_PSEUDO_PIC_REG
 #define TARGET_USE_PSEUDO_PIC_REG  hook_bool_void_true
 
-/* Worker for INITIAL_FRAME_ADDRESS_RTX.  */
+/* Worker for INITIAL_FRAME_ADDRESS_RTX.
+   Returns the RTX representing the address of the initial stack frame.  */
 
 rtx
 or1k_initial_frame_addr ()
@@ -452,7 +453,9 @@ or1k_initial_frame_addr ()
   return arg_pointer_rtx;
 }
 
-/* Worker for DYNAMIC_CHAIN_ADDRESS.  */
+/* Worker for DYNAMIC_CHAIN_ADDRESS.
+   Returns the RTX representing the address of where the caller's frame pointer
+   may be stored on the stack.  */
 
 rtx
 or1k_dynamic_chain_addr (rtx frame)
@@ -460,7 +463,9 @@ or1k_dynamic_chain_addr (rtx frame)
   return plus_constant (Pmode, frame, -2 * UNITS_PER_WORD);
 }
 
-/* Worker for RETURN_ADDR_RTX.  */
+/* Worker for RETURN_ADDR_RTX.
+   Returns the RTX representing the address of where the link register may be
+   stored on the stack.  */
 
 rtx
 or1k_return_addr (int, rtx frame)
@@ -468,7 +473,8 @@ or1k_return_addr (int, rtx frame)
   return gen_frame_mem (Pmode, plus_constant (Pmode, frame, -UNITS_PER_WORD));
 }
 
-/* Worker for TARGET_FRAME_POINTER_REQUIRED.  */
+/* Worker for TARGET_FRAME_POINTER_REQUIRED.
+   Returns true if the current function must use a frame pointer.  */
 
 static bool
 or1k_frame_pointer_required ()
@@ -478,9 +484,10 @@ or1k_frame_pointer_required ()
   return (crtl->accesses_prior_frames || crtl->profile);
 }
 
-/* Helper for defining __builtin_eh_return, this will override the current
-   function's return address stored on the stack.  This is called before
-   running the function epilogue so we can't just update the link register.
+/* Expand the "eh_return" pattern.
+   Used for defining __builtin_eh_return, this will emit RTX to override the
+   current function's return address stored on the stack.  The emitted RTX is
+   inserted before the epilogue so we can't just update the link register.
    This is used when handling exceptions to jump into the exception handler
    catch block upon return from _Unwind_RaiseException.  */
 
@@ -497,12 +504,13 @@ or1k_expand_eh_return (rtx eh_addr)
   emit_move_insn (lraddr, eh_addr);
 }
 
-/* We allow the following eliminiations:
-    FP -> HARD_FP or SP
-    AP -> HARD_FP or SP
+/* Helper for defining INITIAL_ELIMINATION_OFFSET.
+   We allow the following eliminiations:
+     FP -> HARD_FP or SP
+     AP -> HARD_FP or SP
 
-  HFP and AP are the same which is handled below.
- */
+   HFP and AP are the same which is handled below.  */
+
 HOST_WIDE_INT
 or1k_initial_elimination_offset (int from, int to)
 {
@@ -531,7 +539,8 @@ or1k_initial_elimination_offset (int from, int to)
   return offset;
 }
 
-/* Worker function for TARGET_LEGITIMATE_ADDRESS_P.  */
+/* Worker function for TARGET_LEGITIMATE_ADDRESS_P.
+   Return true if X is a legitimate address RTX on OpenRISC.  */
 
 static bool
 or1k_legitimate_address_p (machine_mode, rtx x, bool strict_p)
@@ -611,7 +620,7 @@ or1k_legitimate_address_p (machine_mode, rtx x, bool strict_p)
 
 /* Return the TLS type for TLS symbols, 0 otherwise.  */
 
-tls_model
+static tls_model
 or1k_tls_symbolic_operand (rtx op)
 {
   rtx sym, addend;
@@ -643,6 +652,7 @@ or1k_tls_call (rtx dest, rtx arg)
 }
 
 /* Helper for or1k_legitimize_address_1.  Wrap X in an unspec.  */
+
 static rtx
 gen_sym_unspec (rtx x, int kind)
 {
