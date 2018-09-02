@@ -539,7 +539,7 @@ or1k_initial_elimination_offset (int from, int to)
   return offset;
 }
 
-/* Worker function for TARGET_LEGITIMATE_ADDRESS_P.
+/* Worker for TARGET_LEGITIMATE_ADDRESS_P.
    Return true if X is a legitimate address RTX on OpenRISC.  */
 
 static bool
@@ -700,7 +700,10 @@ or1k_legitimize_address_displacement (rtx *off1, rtx *off2,
 #define TARGET_LEGITIMIZE_ADDRESS_DISPLACEMENT \
   or1k_legitimize_address_displacement
 
-/* Worker function for TARGET_LEGITIMIZE_ADDRESS.  */
+/* Helper function to implement both TARGET_LEGITIMIZE_ADDRESS and expand the
+   patterns "movqi", "movqi" and "movsi".  Returns an valid OpenRISC RTX that
+   represents the argument X which is an invalid address RTX.  The argument
+   SCRATCH may be used as a temporary when building addresses.  */
 
 static rtx
 or1k_legitimize_address_1 (rtx x, rtx scratch)
@@ -834,6 +837,9 @@ or1k_legitimize_address_1 (rtx x, rtx scratch)
     }
 }
 
+/* Worker for TARGET_LEGITIMIZE_ADDRESS.
+   This delegates implementation to or1k_legitimize_address_1.  */
+
 static rtx
 or1k_legitimize_address (rtx x, rtx oldx ATTRIBUTE_UNUSED, machine_mode)
 {
@@ -895,6 +901,10 @@ or1k_cannot_force_const_mem (machine_mode, rtx x)
 #undef  TARGET_CANNOT_FORCE_CONST_MEM
 #define TARGET_CANNOT_FORCE_CONST_MEM or1k_cannot_force_const_mem
 
+/* Worker for TARGET_LEGITIMATE_CONSTANT_P.
+   Returns true is the RTX X represents a constant that can be used as an
+   immediate operand in OpenRISC.  */
+
 static bool
 or1k_legitimate_constant_p (machine_mode, rtx x)
 {
@@ -920,7 +930,10 @@ or1k_legitimate_constant_p (machine_mode, rtx x)
 #undef  TARGET_LEGITIMATE_CONSTANT_P
 #define TARGET_LEGITIMATE_CONSTANT_P or1k_legitimate_constant_p
 
-/* Worker function for TARGET_PASS_BY_REFERENCE.  */
+/* Worker for TARGET_PASS_BY_REFERENCE.
+   Returns true if an argument of TYPE in MODE should be passed by reference
+   as required by the OpenRISC ABI.  On OpenRISC structures, unions and
+   arguments larger than 64-bits are passed by reference.  */
 
 static bool
 or1k_pass_by_reference (cumulative_args_t, machine_mode mode,
@@ -938,7 +951,10 @@ or1k_pass_by_reference (cumulative_args_t, machine_mode mode,
   return size < 0 || size > 8;
 }
 
-/* Worker function for TARGET_FUNCTION_VALUE.  */
+/* Worker for TARGET_FUNCTION_VALUE.
+   Returns an RTX representing the location where function return values will
+   be stored.  On OpenRISC this is the register r11.  64-bit return value's
+   upper 32-bits are returned in r12, this is automatically done by GCC.  */
 
 static rtx
 or1k_function_value (const_tree valtype,
@@ -948,7 +964,10 @@ or1k_function_value (const_tree valtype,
   return gen_rtx_REG (TYPE_MODE (valtype), RV_REGNUM);
 }
 
-/* Worker function for TARGET_LIBCALL_VALUE.  */
+/* Worker for TARGET_LIBCALL_VALUE.
+   Returns an RTX representing the location where function return values to
+   external libraries will be stored.  On OpenRISC this the same as local
+   function calls.  */
 
 static rtx
 or1k_libcall_value (machine_mode mode,
@@ -958,7 +977,9 @@ or1k_libcall_value (machine_mode mode,
 }
 
 
-/* Worker function for TARGET_FUNCTION_VALUE_REGNO_P.  */
+/* Worker for TARGET_FUNCTION_VALUE_REGNO_P.
+   Returns true if REGNO is a valid register for storing a function return
+   value.  */
 
 static bool
 or1k_function_value_regno_p (const unsigned int regno)
@@ -966,7 +987,7 @@ or1k_function_value_regno_p (const unsigned int regno)
   return (regno == RV_REGNUM);
 }
 
-/* Worker function for TARGET_STRICT_ARGUMENT_NAMING.
+/* Worker for TARGET_STRICT_ARGUMENT_NAMING.
    The final named argument in a variatic function is named.  */
 
 static bool
@@ -978,8 +999,11 @@ or1k_strict_argument_naming (cumulative_args_t ca ATTRIBUTE_UNUSED)
 #undef  TARGET_STRICT_ARGUMENT_NAMING
 #define TARGET_STRICT_ARGUMENT_NAMING or1k_strict_argument_naming
 
-/* Worker function for TARGET_FUNCTION_ARG.  Return the next register to be
-   used to hold a function argument or NULL_RTX if there's no more space.  */
+/* Worker for TARGET_FUNCTION_ARG.
+   Return the next register to be used to hold a function argument or NULL_RTX
+   if there's no more space.  Arugment CUM_V represents the current argument
+   offset, zero for the first function argument.  OpenRISC function arguments
+   maybe be passed in registers r3 to r8.  */
 
 static rtx
 or1k_function_arg (cumulative_args_t cum_v, machine_mode mode,
@@ -1001,9 +1025,9 @@ or1k_function_arg (cumulative_args_t cum_v, machine_mode mode,
     return NULL_RTX;
 }
 
-/* Worker function for TARGET_FUNCTION_ARG_ADVANCE.  Update the cumulative
-   args to advnaced past the next function argument.  This is not needed
-   for arguments passed on the stack.  */
+/* Worker for TARGET_FUNCTION_ARG_ADVANCE.
+   Update the cumulative args descriptor CUM_V to advance past the next function
+   argument.  Note, this is not called for arguments passed on the stack.  */
 
 static void
 or1k_function_arg_advance (cumulative_args_t cum_v, machine_mode mode,
@@ -1018,8 +1042,9 @@ or1k_function_arg_advance (cumulative_args_t cum_v, machine_mode mode,
     *cum += nreg;
 }
 
-/* worker function for TARGET_RETURN_IN_MEMORY.  What type of args get returned
-   in memory?  Any value bigger than 64-bits is returned in memory.  */
+/* worker function for TARGET_RETURN_IN_MEMORY.
+   Returns true if the argument of TYPE should be returned in memory.  On
+   OpenRISC this is any value larger than 64-bits.  */
 
 static bool
 or1k_return_in_memory (const_tree type, const_tree fntype ATTRIBUTE_UNUSED)
@@ -1112,7 +1137,14 @@ print_reloc (FILE *stream, rtx x, HOST_WIDE_INT add, reloc_kind kind)
     output_addr_reloc (stream, x, add, reloc);
 }
 
-/* Worker function for TARGET_PRINT_OPERAND_ADDRESS.  */
+/* Worker for TARGET_PRINT_OPERAND_ADDRESS.
+   Prints the argument ADDR, an address RTX, to the file FILE.  The output is
+   formed as expected by the OpenRISC assembler.  Examples:
+
+     RTX							      OUTPUT
+     (reg:SI 3)							       0(r3)
+     (plus:SI (reg:SI 3) (const_int 4))				     0x4(r3)
+     (lo_sum:SI (reg:SI 3) (symbol_ref:SI ("x"))))		   lo(x)(r3)  */
 
 static void
 or1k_print_operand_address (FILE *file, machine_mode, rtx addr)
@@ -1152,7 +1184,21 @@ or1k_print_operand_address (FILE *file, machine_mode, rtx addr)
   fprintf (file, "(%s)", reg_names[REGNO (addr)]);
 }
 
-/* Worker function for TARGET_PRINT_OPERAND.  */
+/* Worker for TARGET_PRINT_OPERAND.
+   Print operand X, an RTX, to the file FILE.  The output is formed as expected
+   by the OpenRISC assember.  CODE is the letter following a '%' in an
+   instrunction template used to control the RTX output.  Example(s):
+
+     CODE   RTX                   OUTPUT     COMMENT
+     0      (reg:SI 3)                r3     output an operand
+     r      (reg:SI 3)                r3     output a register or const zero
+     H      (reg:SI 3)                r4     output the high pair register
+     h      (symbol_ref:SI ("x"))  ha(x)     output a signed high relocation
+     L      (symbol_ref:SI ("x"))  lo(x)     output a low relocation
+
+   Note, '#' is a special code used to fill the branch delay slot with an l.nop
+   instruction.  The l.nop (no-op) instruction is only outputted when the delay
+   slot has not been filled.  */
 
 static void
 or1k_print_operand (FILE *file, rtx x, int code)
@@ -1233,7 +1279,7 @@ or1k_print_operand (FILE *file, rtx x, int code)
     }
 }
 
-/* Worker function for TARGET_TRAMPOLINE_INIT.  */
+/* Worker for TARGET_TRAMPOLINE_INIT.  */
 
 static void
 or1k_trampoline_init (rtx m_tramp, tree fndecl, rtx chain)
