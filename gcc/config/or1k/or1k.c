@@ -94,7 +94,7 @@ or1k_option_override (void)
   init_machine_status = or1k_init_machine_status;
 }
 
-/* Return true if REGNO must be saved for the current function.  */
+/* Returns true if REGNO must be saved for the current function.  */
 
 static bool
 callee_saved_regno_p (int regno)
@@ -129,30 +129,29 @@ callee_saved_regno_p (int regno)
 }
 
 /* Worker for TARGET_COMPUTE_FRAME_LAYOUT.
- * Compute an populate the machine specific function attributes which are
- * globally accessible via cfun->machine.  These include the sizes needed for
- * stack stored local variables, callee saved registers and space for stack
- * arguments which may be passed to a next function.  The values are used for
- * the epilogue, prologue and eliminations.
- *
- * OpenRISC stack grows downwards and contains:
- *
- *  ---- previous frame --------
- *  current func arg[n]
- *  current func arg[0]   <-- r2 [HFP,AP]
- *  ---- current stack frame ---  ^  ---\
- *  return address      r9        |     |
- *  old frame pointer   r2       (+)    |-- machine->total_size
- *  callee saved regs             |     | > machine->callee_saved_reg_size
- *  local variables               |     | > machine->local_vars_size       <-FP
- *  next function args    <-- r1 [SP]---/ > machine->args_size
- *  ----------------------------  |
- *                               (-)
- *         (future)               |
- *                                V
- *
- * All of these contents are optional.
- */
+   Compute and populate machine specific function attributes which are globally
+   accessible via cfun->machine.  These include the sizes needed for
+   stack stored local variables, callee saved registers and space for stack
+   arguments which may be passed to a next function.  The values are used for
+   the epilogue, prologue and eliminations.
+
+   OpenRISC stack grows downwards and contains:
+
+    ---- previous frame --------
+    current func arg[n]
+    current func arg[0]   <-- r2 [HFP,AP]
+    ---- current stack frame ---  ^  ---\
+    return address      r9        |     |
+    old frame pointer   r2       (+)    |-- machine->total_size
+    callee saved regs             |     | > machine->callee_saved_reg_size
+    local variables               |     | > machine->local_vars_size       <-FP
+    next function args    <-- r1 [SP]---/ > machine->args_size
+    ----------------------------  |
+                                 (-)
+           (future)               |
+                                  V
+
+   All of these contents are optional.  */
 
 static void
 or1k_compute_frame_layout (void)
@@ -540,7 +539,7 @@ or1k_initial_elimination_offset (int from, int to)
 }
 
 /* Worker for TARGET_LEGITIMATE_ADDRESS_P.
-   Return true if X is a legitimate address RTX on OpenRISC.  */
+   Returns true if X is a legitimate address RTX on OpenRISC.  */
 
 static bool
 or1k_legitimate_address_p (machine_mode, rtx x, bool strict_p)
@@ -1279,7 +1278,12 @@ or1k_print_operand (FILE *file, rtx x, int code)
     }
 }
 
-/* Worker for TARGET_TRAMPOLINE_INIT.  */
+/* Worker for TARGET_TRAMPOLINE_INIT.
+   This is called to initialize a trampoline.  The argument M_TRAMP is an RTX
+   for the memory block to be initialized with trampoline code.  The argument
+   FNDECL contains the definition of the nested function to be called, we use
+   this to get the function's address.  The argument CHAIN is an RTX for the
+   static chain value to be passed to the nested function.  */
 
 static void
 or1k_trampoline_init (rtx m_tramp, tree fndecl, rtx chain)
@@ -1335,7 +1339,9 @@ or1k_trampoline_init (rtx m_tramp, tree fndecl, rtx chain)
      to be done here. */
 }
 
-/* Worker for TARGET_HARD_REGNO_MODE_OK.  */
+/* Worker for TARGET_HARD_REGNO_MODE_OK.
+   Returns true if the hard register REGNO is ok for storing values of mode
+   MODE.  */
 
 static bool
 or1k_hard_regno_mode_ok (unsigned int regno, machine_mode mode)
@@ -1350,7 +1356,10 @@ or1k_hard_regno_mode_ok (unsigned int regno, machine_mode mode)
 #undef TARGET_HARD_REGNO_MODE_OK
 #define TARGET_HARD_REGNO_MODE_OK or1k_hard_regno_mode_ok
 
-/* Worker for TARGET_CAN_CHANGE_MODE_CLASS.  */
+/* Worker for TARGET_CAN_CHANGE_MODE_CLASS.
+   Returns true if its ok to change a register in class RCLASS from mode FROM to
+   mode TO.  In general OpenRISC registers, other than special flags, handle all
+   supported classes.  */
 
 static bool
 or1k_can_change_mode_class (machine_mode from, machine_mode to,
@@ -1363,6 +1372,12 @@ or1k_can_change_mode_class (machine_mode from, machine_mode to,
 
 #undef TARGET_CAN_CHANGE_MODE_CLASS
 #define TARGET_CAN_CHANGE_MODE_CLASS or1k_can_change_mode_class
+
+/* Expand the patterns "movqi", "movqi" and "movsi".  The argument OP0 is the
+   destination and OP1 is the source.  This expands to set OP0 to OP1.  OpenRISC
+   cannot do memory to memory assignments so for those cases we force one
+   argument to a register.  Constants that can't fit into a 16-bit immediate are
+   split.  Symbols are lagitimized using split relocations.  */
 
 void
 or1k_expand_move (machine_mode mode, rtx op0, rtx op1)
@@ -1410,9 +1425,13 @@ or1k_expand_move (machine_mode mode, rtx op0, rtx op1)
   emit_insn (gen_rtx_SET (op0, op1));
 }
 
-/* Expand a comparison in operands[0] .. operands[2], where
-   [0] is the operator and [1],[2] are the operands.  Split out
-   the compare into SR[F] and return a new operation in operands[0].  */
+/* Used to expand patterns "movsicc", "movqicc", "movhicc", "cstoresi4" and
+   "cbranchsi4".
+   Expands a comparison where OPERANDS is an array of RTX describing the
+   comparison.  The first argument OPERANDS[0] is the operator and OPERANDS[1]
+   and OPERANDS[2] are the operands.  Split out the compare into SR[F] and
+   return a new operation in OPERANDS[0].  The inputs OPERANDS[1] and
+   OPERANDS[2] are not directly used, only overridden.  */
 
 void
 or1k_expand_compare (rtx *operands)
@@ -1428,6 +1447,14 @@ or1k_expand_compare (rtx *operands)
   operands[1] = sr_f;
   operands[2] = const0_rtx;
 }
+
+/* Expand the patterns "call", "sibcall", "call_value" and "sibcall_value".
+   Expands a function call where argument RETVAL is an optional RTX providing
+   return value storage, the argument FNADDR is and RTX describing the function
+   to call, the argument CALLARG1 is the number or registers used as operands
+   and the argument SIBCALL should be true if this is a nested function call.
+   If FNADDR is a non local symbol and FLAG_PIC is enabled this will generate
+   a PLT call.  */
 
 void
 or1k_expand_call (rtx retval, rtx fnaddr, rtx callarg1, bool sibcall)
@@ -1468,11 +1495,12 @@ or1k_expand_call (rtx retval, rtx fnaddr, rtx callarg1, bool sibcall)
   CALL_INSN_FUNCTION_USAGE (call) = use;
 }
 
-/* Worker for TARGET_FUNCTION_OK_FOR_SIBCALL.  */
+/* Worker for TARGET_FUNCTION_OK_FOR_SIBCALL.
+   Returns true if the function declared by DECL is ok for calling as a nested
+   function.  */
 
 static bool
-or1k_function_ok_for_sibcall (tree decl ATTRIBUTE_UNUSED,
-			      tree exp ATTRIBUTE_UNUSED)
+or1k_function_ok_for_sibcall (tree decl, tree exp ATTRIBUTE_UNUSED)
 {
   /* We can sibcall to any function if not PIC.  */
   if (!flag_pic)
