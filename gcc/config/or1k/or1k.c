@@ -1687,7 +1687,19 @@ or1k_finish_atomic_subword (machine_mode mode, rtx o, rtx n, rtx shift)
   emit_move_insn (o, gen_lowpart (mode, n));
 }
 
-/* Expand an atomic compare and swap operation.  */
+/* Expand an atomic compare and swap operation.
+   Emits the RTX to perform a compare and swap operation.  This function takes
+   8 RTX arguments in the OPERANDS array.  The compare and swap operation
+   loads a value from memory (OPERANDS[2]) and compares it with an expected
+   value (OPERANDS[3]), if the values are equal it stores a new value
+   (OPERANDS[4]) to memory.  The argument OPERANDS[0] represents a boolean
+   result which will be set to true if the operation succeeds.  A return value
+   (OPERANDS[1]) will be set to what was loaded from memory.  The argument
+   OPERAND[5] is used to indicate if the compare and swap is to be treated as
+   weak.  OpenRISC does not use OPERANDS[5] or OPERANDS[6] which provide memory
+   model details.
+   For OpenRISC this emits RTX which will translate to assembly using the
+   'l.lwa' (load word atomic) and 'l.swa' (store word atomic) instructions.  */
 
 void
 or1k_expand_atomic_compare_and_swap (rtx operands[])
@@ -1709,6 +1721,7 @@ or1k_expand_atomic_compare_and_swap (rtx operands[])
     oldval = copy_to_reg (oldval);
 
   label1 = NULL_RTX;
+  /* If strong, create a label to try again.  */
   if (!is_weak)
     {
       label1 = gen_rtx_LABEL_REF (VOIDmode, gen_label_rtx ());
@@ -1721,6 +1734,7 @@ or1k_expand_atomic_compare_and_swap (rtx operands[])
   emit_unlikely_jump (EQ, label2);
   emit_store_conditional (mode, mem, newval);
 
+  /* If strong, jump back to try again on fails.  */
   if (!is_weak)
     emit_unlikely_jump (EQ, label1);
   emit_label (XEXP (label2, 0));
@@ -1792,11 +1806,19 @@ or1k_expand_atomic_compare_and_swap_qihi (rtx operands[])
 
   or1k_finish_atomic_subword (mode, orig_retval, retval, shift);
 
-  /* In all cases, CR0 contains EQ on success, and NE on failure.  */
+  /* In all cases, SR_F contains 1 on success, and 0 on failure.  */
   emit_insn (gen_sne_sr_f (boolval));
 }
 
-/* Expand an atomic exchange operation.  */
+/* Expand an atomic exchange operation.
+   Emits the RTX to perform an exchange operation.  This function takes 4 RTX
+   arguments in the OPERANDS array.  The exchange operation atomically loads a
+   value from memory (OPERANDS[1]) to a return value (OPERANDS[0]) and stores a
+   new value (OPERANDS[2]) back to the memory location.
+   Another argument (OPERANDS[3]) is used to indicate the memory model and
+   is not used by OpenRISC.
+   For OpenRISC this emits RTX which will translate to assembly using the
+   'l.lwa' (load word atomic) and 'l.swa' (store word atomic) instructions.  */
 
 void
 or1k_expand_atomic_exchange (rtx operands[])
