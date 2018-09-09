@@ -147,9 +147,9 @@ callee_saved_regno_p (int regno)
     local variables               |     | > machine->local_vars_size       <-FP
     next function args    <-- r1 [SP]---/ > machine->args_size
     ----------------------------  |
-                                 (-)
-           (future)               |
-                                  V
+				 (-)
+	   (future)               |
+				  V
 
    All of these contents are optional.  */
 
