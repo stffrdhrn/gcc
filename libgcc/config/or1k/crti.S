@@ -19,19 +19,15 @@ a copy of the GCC Runtime Library Exception along with this program;
 see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 <http://www.gnu.org/licenses/>.  */
 
-	.section .init
+/* Here _init and _fini are empty because .init_array/.fini_array are used
+   exclusively.  However, the functions are still needed as required when
+   linking.  */
 	.align 4
 	.global	_init
 	.type	_init,@function
 _init:
-	l.sw	-4(r1), r9
-	l.addi	r1,r1,-4
-
-	.section .fini
-	.align	4
 	.global	_fini
 	.type	_fini,@function
 _fini:
-	l.sw	-4(r1), r9
-	l.addi	r1,r1,-4
-
+	l.jr	r9
+	 l.nop
