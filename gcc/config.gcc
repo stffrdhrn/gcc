@@ -2468,11 +2468,13 @@ nvptx-*)
 or1k*-*-*)
 	tm_file="elfos.h ${tm_file}"
 	tmake_file="${tmake_file} or1k/t-or1k"
+	# Force .init_array support.  The configure script cannot always
+	# automatically detect that GAS supports it, yet we require it.
+	gcc_cv_initfini_array=yes
         case ${target} in
         or1k*-*-linux*)
                 tm_file="${tm_file} gnu-user.h linux.h glibc-stdint.h"
                 tm_file="${tm_file} or1k/linux.h"
-                enable_initfini_array=yes
                 ;;
 	or1k*-*-elf*)
 		tm_file="${tm_file} newlib-stdint.h or1k/elf.h"
