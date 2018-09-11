@@ -28,6 +28,8 @@
       builtin_define ("__OR1K__");		\
       builtin_define ("__OR1K_DELAY__");	\
       builtin_define ("__or1k__");		\
+      if (TARGET_CLASS2)			\
+	builtin_define ("__class2__");		\
       builtin_assert ("cpu=or1k");		\
       builtin_assert ("machine=or1k");		\
     }						\

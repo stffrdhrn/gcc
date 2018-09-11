@@ -63,6 +63,15 @@
   "alu,st,ld,control,multi"
   (const_string "alu"))
 
+(define_attr "insn_support" "class1,class2" (const_string "class1"))
+
+(define_attr "enabled" ""
+  (cond [(eq_attr "insn_support" "class1") (const_int 1)
+	 (and (eq_attr "insn_support" "class2")
+	      (ne (symbol_ref "TARGET_CLASS2") (const_int 0)))
+	 (const_int 1)]
+	(const_int 0)))
+
 ;; Describe a user's asm statement.
 (define_asm_attributes
   [(set_attr "type" "multi")])
@@ -76,7 +85,7 @@
   (eq_attr "type" "st")
   "cpu")
 (define_insn_reservation "ld" 3
-  (eq_attr "type" "st")
+  (eq_attr "type" "ld")
   "cpu")
 (define_insn_reservation "control" 1
   (eq_attr "type" "control")
@@ -310,7 +319,8 @@
   ""
   "@
    l.exthz\t%0, %1
-   l.lhz\t%0, %1")
+   l.lhz\t%0, %1"
+  [(set_attr "insn_support" "class2,*")])
 
 (define_insn "zero_extendqisi2"
   [(set (match_operand:SI 0 "register_operand"                    "=r,r")
@@ -318,7 +328,8 @@
   ""
   "@
    l.extbz\t%0, %1
-   l.lbz\t%0, %1")
+   l.lbz\t%0, %1"
+  [(set_attr "insn_support" "class2,*")])
 
 ;; Sign extension patterns
 
@@ -329,7 +340,8 @@
   ""
   "@
    l.exths\t%0, %1
-   l.lhs\t%0, %1")
+   l.lhs\t%0, %1"
+  [(set_attr "insn_support" "class2,*")])
 
 (define_insn "extendqisi2"
   [(set (match_operand:SI 0 "register_operand"                     "=r,r")
@@ -337,7 +349,8 @@
   ""
   "@
    l.extbs\t%0, %1
-   l.lbs\t%0, %1")
+   l.lbs\t%0, %1"
+  [(set_attr "insn_support" "class2,*")])
 
 ;; -------------------------------------------------------------------------
 ;; Compare instructions
@@ -368,7 +381,8 @@
   ""
   "@
    l.sf<insn>\t%r0, %1
-   l.sf<insn>i\t%r0, %1")
+   l.sf<insn>i\t%r0, %1"
+  [(set_attr "insn_support" "*,class2")])
 
 ;; -------------------------------------------------------------------------
 ;; Conditional Store instructions
@@ -427,7 +441,7 @@
   operands[1] = xops[0];
 })
 
-(define_insn "*cmov<I:mode>"
+(define_insn_and_split "*cmov<I:mode>"
   [(set (match_operand:I 0 "register_operand" "=r")
 	(if_then_else:I
 	  (match_operator 3 "equality_comparison_operator"
@@ -439,6 +453,21 @@
   return (GET_CODE (operands[3]) == NE
 	  ? "l.cmov\t%0, %r1, %r2"
 	  : "l.cmov\t%0, %r2, %r1");
+}
+  "!TARGET_CLASS2"
+  [(const_int 0)]
+{
+  rtx x;
+  rtx label = gen_rtx_LABEL_REF (VOIDmode, gen_label_rtx ());
+
+  /* Generated a *cbranchs pattern.  */
+  emit_move_insn (operands[0], operands[1]);
+  x = gen_rtx_IF_THEN_ELSE (VOIDmode, operands[3], label, pc_rtx);
+  emit_jump_insn (gen_rtx_SET (pc_rtx, x));
+  emit_move_insn (operands[0], operands[2]);
+  emit_label (XEXP (label, 0));
+
+  DONE;
 })
 
 ;; -------------------------------------------------------------------------
