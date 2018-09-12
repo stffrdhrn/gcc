@@ -28,13 +28,20 @@ __mulsi3:
 	l.movhi		r11, 0			/* initial r */
 
 	/* Given R = X * Y ... */
-1:	l.sfeqi		r4, 0			/* while (y != 0) */
+1:	l.sfeq		r4, r0			/* while (y != 0) */
 	l.bf		2f
 	 l.andi		r5, r4, 1		/* if (y & 1) ... */
 	l.add		r12, r11, r3
-	l.sfnei		r5, 0
+	l.sfne		r5, r0
+#if defined(__class2__)
 	l.cmov		r11, r12, r11		/* ... r += x. */
 	l.srli		r4, r4, 1		/* y >>= 1 */
+#else
+	l.bnf		3f
+	 l.srli		r4, r4, 1		/* y >>= 1 */
+	l.ori		r11, r12, 0
+3:
+#endif
 	l.j		1b
 	 l.add		r3, r3, r3		/* x <<= 1 */
 
@@ -81,9 +88,17 @@ __udivmodsi3_internal:
 	l.sub		r8, r12, r4	/* tmp2 = x - y */
 	l.sfleu		r4, r12		/* y <= x */
 	l.srli		r4, r4, 1	/* y >>= 1 */
+#if defined(__class2__)
 	l.cmov		r11, r7, r11	/* if (y <= x) quot = tmp1 */
 	l.cmov		r12, r8, r12	/* if (y <= x) x = tmp2 */
-	l.sfnei		r6, 0		/* loop until mask == 0 */
+#else
+	l.bnf		4f
+	 l.nop
+	l.ori		r11, r7, 0
+	l.ori		r12, r8, 0
+4:
+#endif
+	l.sfne		r6, r0		/* loop until mask == 0 */
 	l.bf		3b
 	 l.add		r7, r11, r6	/* delay fill from loop start */
 
@@ -129,16 +144,29 @@ __umodsi3:
 __divsi3:
 	l.xor		r6, r3, r4	/* need result negate?  */
 
-	l.sfltsi	r3, 0		/* abs(x) */
+	l.sflts		r3, r0		/* abs(x) */
+#if defined(__class2__)
 	l.sub		r5, r0, r3
 	l.cmov		r3, r5, r3
-
-	l.sfltsi	r4, 0		/* abs(y) */
+#else
+	l.bnf		1f
+	 l.sub		r5, r0, r3
+	l.ori		r3, r5, 0
+1:
+#endif
+	l.sflts		r4, r0		/* abs(y) */
+#if defined(__class2__)
 	l.sub		r5, r0, r4
 	l.cmov		r4, r5, r4
+#else
+	l.bnf		2f
+	 l.sub		r5, r0, r4
+	l.ori		r4, r5, 0
+2:
+#endif
 
 	/* If the result will not require sign flip, tail call.  */
-	l.sfltsi	r6, 0
+	l.sflts		r6, r0
         l.bnf		__udivmodsi3_internal
 	 l.ori		r13, r9, 0	/* save lr */
 
@@ -160,11 +188,18 @@ __divsi3:
 	.type	__modsi3, @function
 	.cfi_startproc
 __modsi3:
-	l.sfltsi	r4, 0		/* abs(y) */
+	l.sflts		r4, r0		/* abs(y) */
+#if defined(__class2__)
 	l.sub		r5, r0, r4
 	l.cmov		r4, r5, r4
+#else
+	l.bnf		2f
+	 l.sub		r5, r0, r4
+	l.ori		r4, r5, 0
+2:
+#endif
 
-	l.sfltsi	r3, 0		/* x negative? */
+	l.sflts		r3, r0		/* x negative? */
 	l.bf		1f
 	 l.ori		r13, r9, 0	/* save lr */
 
