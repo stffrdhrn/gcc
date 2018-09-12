@@ -1,5 +1,5 @@
 /* { dg-do compile } */
-/* { dg-options "-O2" } */
+/* { dg-options "-mclass2 -O2" } */
 
 int cond (int a, int b) {
   return a > b;
