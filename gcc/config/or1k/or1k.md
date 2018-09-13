@@ -460,13 +460,23 @@
   rtx x;
   rtx label = gen_rtx_LABEL_REF (VOIDmode, gen_label_rtx ());
 
-  /* Generated a *cbranchs pattern.  */
-  emit_move_insn (operands[0], operands[1]);
-  x = gen_rtx_IF_THEN_ELSE (VOIDmode, operands[3], label, pc_rtx);
-  emit_jump_insn (gen_rtx_SET (pc_rtx, x));
-  emit_move_insn (operands[0], operands[2]);
-  emit_label (XEXP (label, 0));
+  /* Generated a *cbranch pattern.  */
+  if (rtx_equal_p (operands[0], operands[2]))
+    {
+      PUT_CODE (operands[3], (GET_CODE (operands[3]) == NE) ? EQ : NE);
+      x = gen_rtx_IF_THEN_ELSE (VOIDmode, operands[3], label, pc_rtx);
+      emit_jump_insn (gen_rtx_SET (pc_rtx, x));
+      emit_move_insn (operands[0], operands[1]);
+    }
+  else
+    {
+      x = gen_rtx_IF_THEN_ELSE (VOIDmode, operands[3], label, pc_rtx);
+      emit_move_insn (operands[0], operands[1]);
+      emit_jump_insn (gen_rtx_SET (pc_rtx, x));
+      emit_move_insn (operands[0], operands[2]);
+    }
 
+  emit_label (XEXP (label, 0));
   DONE;
 })
 
