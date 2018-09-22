@@ -85,7 +85,7 @@
   (eq_attr "type" "st")
   "cpu")
 (define_insn_reservation "ld" 3
-  (eq_attr "type" "ld")
+  (eq_attr "type" "st")
   "cpu")
 (define_insn_reservation "control" 1
   (eq_attr "type" "control")
