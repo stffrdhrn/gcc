@@ -63,6 +63,15 @@
   "alu,st,ld,control,multi"
   (const_string "alu"))
 
+(define_attr "insn_support" "class1,class2" (const_string "class1"))
+
+(define_attr "enabled" ""
+  (cond [(eq_attr "insn_support" "class1") (const_int 1)
+	 (and (eq_attr "insn_support" "class2")
+	      (ne (symbol_ref "TARGET_CLASS2") (const_int 0)))
+	 (const_int 1)]
+	(const_int 0)))
+
 ;; Describe a user's asm statement.
 (define_asm_attributes
   [(set_attr "type" "multi")])
@@ -76,7 +85,7 @@
   (eq_attr "type" "st")
   "cpu")
 (define_insn_reservation "ld" 3
-  (eq_attr "type" "st")
+  (eq_attr "type" "ld")
   "cpu")
 (define_insn_reservation "control" 1
   (eq_attr "type" "control")

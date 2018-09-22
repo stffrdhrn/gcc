@@ -2471,6 +2471,27 @@ or1k*-*-*)
 	# Force .init_array support.  The configure script cannot always
 	# automatically detect that GAS supports it, yet we require it.
 	gcc_cv_initfini_array=yes
+
+	# Handle --with-multilib-list=...
+	or1k_multilibs="${with_multilib_list}"
+	if test "$or1k_multilibs" = "default"; then
+		or1k_multilibs="mclass2,msoft-mul,msoft-div"
+	fi
+	or1k_multilibs=`echo $or1k_multilibs | sed -e 's/,/ /g'`
+	for or1k_multilib in ${or1k_multilibs}; do
+		case ${or1k_multilib} in
+		mclass1 | mclass2 | \
+		mhard-div | mhard-mul | \
+		msoft-div | msoft-mul )
+			TM_MULTILIB_CONFIG="${TM_MULTILIB_CONFIG},${or1k_multilib}"
+			;;
+		*)
+			echo "--with-multilib-list=${with_multilib_list} not supported."
+			exit 1
+		esac
+	done
+	TM_MULTILIB_CONFIG=`echo $TM_MULTILIB_CONFIG | sed 's/^,//'`
+
         case ${target} in
         or1k*-*-linux*)
                 tm_file="${tm_file} gnu-user.h linux.h glibc-stdint.h"

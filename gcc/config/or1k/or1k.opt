@@ -23,19 +23,26 @@
 
 ; Please try to keep this file in ASCII collating order.
 
-mhard-mul
-Target RejectNegative InverseMask(SOFT_MUL).
-Use hardware multiply instructions, use -msoft-mul for emulation.
+mclass1
+Target InverseMask(CLASS2)
+Enable ORBIS32 class I instructions.  (Default)
+
+mclass2
+Target Mask(CLASS2)
+Enable ORBIS32 class II instructions.
 
 mhard-div
 Target RejectNegative InverseMask(SOFT_DIV)
 Use hardware divide instructions, use -msoft-div for emulation.
 
-msoft-mul
-Target RejectNegative Mask(SOFT_MUL).
-Use multiply emulation.
+mhard-mul
+Target RejectNegative InverseMask(SOFT_MUL).
+Use hardware multiply instructions, use -msoft-mul for emulation.
 
 msoft-div
 Target RejectNegative Mask(SOFT_DIV)
 Use divide emulation.
 
+msoft-mul
+Target RejectNegative Mask(SOFT_MUL).
+Use multiply emulation.
