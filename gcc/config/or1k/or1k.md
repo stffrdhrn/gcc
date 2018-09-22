@@ -381,7 +381,8 @@
   ""
   "@
    l.sf<insn>\t%r0, %1
-   l.sf<insn>i\t%r0, %1")
+   l.sf<insn>i\t%r0, %1"
+  [(set_attr "insn_support" "*,class2")])
 
 ;; -------------------------------------------------------------------------
 ;; Conditional Store instructions

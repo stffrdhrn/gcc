@@ -1438,6 +1438,11 @@ or1k_expand_compare (rtx *operands)
 {
   rtx sr_f = gen_rtx_REG (BImode, SR_F_REGNUM);
 
+  /* The RTL may receive an immediate in argument 1 of the compare, this is not
+     supported unless we have class2 instructions, force them into registers.  */
+  if (!TARGET_CLASS2)
+    XEXP (operands[0], 1) = force_reg (SImode, XEXP (operands[0], 1));
+
   /* Emit the given comparison into the Flag bit.  */
   PUT_MODE (operands[0], BImode);
   emit_insn (gen_rtx_SET (sr_f, operands[0]));
