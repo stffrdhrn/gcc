@@ -319,7 +319,8 @@
   ""
   "@
    l.exthz\t%0, %1
-   l.lhz\t%0, %1")
+   l.lhz\t%0, %1"
+  [(set_attr "insn_support" "class2,*")])
 
 (define_insn "zero_extendqisi2"
   [(set (match_operand:SI 0 "register_operand"                    "=r,r")
@@ -327,7 +328,8 @@
   ""
   "@
    l.extbz\t%0, %1
-   l.lbz\t%0, %1")
+   l.lbz\t%0, %1"
+  [(set_attr "insn_support" "class2,*")])
 
 ;; Sign extension patterns
 
@@ -338,7 +340,8 @@
   ""
   "@
    l.exths\t%0, %1
-   l.lhs\t%0, %1")
+   l.lhs\t%0, %1"
+  [(set_attr "insn_support" "class2,*")])
 
 (define_insn "extendqisi2"
   [(set (match_operand:SI 0 "register_operand"                     "=r,r")
@@ -346,7 +349,8 @@
   ""
   "@
    l.extbs\t%0, %1
-   l.lbs\t%0, %1")
+   l.lbs\t%0, %1"
+  [(set_attr "insn_support" "class2,*")])
 
 ;; -------------------------------------------------------------------------
 ;; Compare instructions
