@@ -63,13 +63,14 @@
   "alu,st,ld,control,multi"
   (const_string "alu"))
 
-(define_attr "insn_support" "class1,class2" (const_string "class1"))
+(define_attr "insn_support" "class1,sext,sfimm" (const_string "class1"))
 
 (define_attr "enabled" ""
   (cond [(eq_attr "insn_support" "class1") (const_int 1)
-	 (and (eq_attr "insn_support" "class2")
-	      (ne (symbol_ref "TARGET_CLASS2") (const_int 0)))
-	 (const_int 1)]
+	 (and (eq_attr "insn_support" "sext")
+	      (ne (symbol_ref "TARGET_SEXT") (const_int 0))) (const_int 1)
+	 (and (eq_attr "insn_support" "sfimm")
+	      (ne (symbol_ref "TARGET_SFIMM") (const_int 0))) (const_int 1)]
 	(const_int 0)))
 
 ;; Describe a user's asm statement.
@@ -320,7 +321,7 @@
   "@
    l.exthz\t%0, %1
    l.lhz\t%0, %1"
-  [(set_attr "insn_support" "class2,*")])
+  [(set_attr "insn_support" "sext,*")])
 
 (define_insn "zero_extendqisi2"
   [(set (match_operand:SI 0 "register_operand"                    "=r,r")
@@ -329,7 +330,7 @@
   "@
    l.extbz\t%0, %1
    l.lbz\t%0, %1"
-  [(set_attr "insn_support" "class2,*")])
+  [(set_attr "insn_support" "sext,*")])
 
 ;; Sign extension patterns
 
@@ -341,7 +342,7 @@
   "@
    l.exths\t%0, %1
    l.lhs\t%0, %1"
-  [(set_attr "insn_support" "class2,*")])
+  [(set_attr "insn_support" "sext,*")])
 
 (define_insn "extendqisi2"
   [(set (match_operand:SI 0 "register_operand"                     "=r,r")
@@ -350,7 +351,7 @@
   "@
    l.extbs\t%0, %1
    l.lbs\t%0, %1"
-  [(set_attr "insn_support" "class2,*")])
+  [(set_attr "insn_support" "sext,*")])
 
 ;; -------------------------------------------------------------------------
 ;; Compare instructions
@@ -382,7 +383,7 @@
   "@
    l.sf<insn>\t%r0, %1
    l.sf<insn>i\t%r0, %1"
-  [(set_attr "insn_support" "*,class2")])
+  [(set_attr "insn_support" "*,sfimm")])
 
 ;; -------------------------------------------------------------------------
 ;; Conditional Store instructions
@@ -454,7 +455,7 @@
 	  ? "l.cmov\t%0, %r1, %r2"
 	  : "l.cmov\t%0, %r2, %r1");
 }
-  "!TARGET_CLASS2"
+  "!TARGET_CMOV"
   [(const_int 0)]
 {
   rtx x;

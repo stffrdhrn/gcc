@@ -2475,12 +2475,12 @@ or1k*-*-*)
 	# Handle --with-multilib-list=...
 	or1k_multilibs="${with_multilib_list}"
 	if test "$or1k_multilibs" = "default"; then
-		or1k_multilibs="mclass2,msoft-mul,msoft-div"
+		or1k_multilibs="mcmov,msoft-mul,msoft-div"
 	fi
 	or1k_multilibs=`echo $or1k_multilibs | sed -e 's/,/ /g'`
 	for or1k_multilib in ${or1k_multilibs}; do
 		case ${or1k_multilib} in
-		mclass1 | mclass2 | \
+		mcmov | msext | msfimm | \
 		mhard-div | mhard-mul | \
 		msoft-div | msoft-mul )
 			TM_MULTILIB_CONFIG="${TM_MULTILIB_CONFIG},${or1k_multilib}"

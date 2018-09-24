@@ -33,7 +33,7 @@ __mulsi3:
 	 l.andi		r5, r4, 1		/* if (y & 1) ... */
 	l.add		r12, r11, r3
 	l.sfne		r5, r0
-#if defined(__class2__)
+#if defined(__or1k_cmov__)
 	l.cmov		r11, r12, r11		/* ... r += x. */
 	l.srli		r4, r4, 1		/* y >>= 1 */
 #else
@@ -88,7 +88,7 @@ __udivmodsi3_internal:
 	l.sub		r8, r12, r4	/* tmp2 = x - y */
 	l.sfleu		r4, r12		/* y <= x */
 	l.srli		r4, r4, 1	/* y >>= 1 */
-#if defined(__class2__)
+#if defined(__or1k_cmov__)
 	l.cmov		r11, r7, r11	/* if (y <= x) quot = tmp1 */
 	l.cmov		r12, r8, r12	/* if (y <= x) x = tmp2 */
 #else
@@ -145,7 +145,7 @@ __divsi3:
 	l.xor		r6, r3, r4	/* need result negate?  */
 
 	l.sflts		r3, r0		/* abs(x) */
-#if defined(__class2__)
+#if defined(__or1k_cmov__)
 	l.sub		r5, r0, r3
 	l.cmov		r3, r5, r3
 #else
@@ -155,7 +155,7 @@ __divsi3:
 1:
 #endif
 	l.sflts		r4, r0		/* abs(y) */
-#if defined(__class2__)
+#if defined(__or1k_cmov__)
 	l.sub		r5, r0, r4
 	l.cmov		r4, r5, r4
 #else
@@ -189,7 +189,7 @@ __divsi3:
 	.cfi_startproc
 __modsi3:
 	l.sflts		r4, r0		/* abs(y) */
-#if defined(__class2__)
+#if defined(__or1k_cmov__)
 	l.sub		r5, r0, r4
 	l.cmov		r4, r5, r4
 #else
