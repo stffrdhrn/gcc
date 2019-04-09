@@ -186,7 +186,7 @@
 (define_insn "float<fi><F:mode>2"
   [(set (match_operand:F 0 "register_operand" "=r")
 	(float:F
-	    (match_operand:<FI> 1 "reg_or_0_operand" "rO")))]
+	    (match_operand:<FI> 1 "register_operand" "r")))]
   "TARGET_HARD_FLOAT"
   "lf.itof.<f>\t%0, %r1"
   [(set_attr "type" "fpu")])
@@ -453,7 +453,7 @@
 	(fpcmpcc:BI (match_operand:F 0 "register_operand" "r")
 		    (match_operand:F 1 "register_operand" "r")))]
   "TARGET_HARD_FLOAT"
-  "lf.sf<code>.<f>\t%r0, %1"
+  "lf.sf<code>.<f>\t%0, %1"
   [(set_attr "type" "fpu")])
 
 
