@@ -188,7 +188,7 @@
 	(float:F
 	    (match_operand:<FI> 1 "register_operand" "r")))]
   "TARGET_HARD_FLOAT"
-  "lf.itof.<f>\t%0, %r1"
+  "lf.itof.<f>\t%0, %1"
   [(set_attr "type" "fpu")])
 
 (define_insn "fix_trunc<F:mode><fi>2"
